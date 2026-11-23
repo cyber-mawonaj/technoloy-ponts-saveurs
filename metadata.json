@@ -1,0 +1,8 @@
+{
+  "name": "Pont des saveurs et des cultures de TechnoLoy",
+  "description": "Concevoir et réaliser la maquette d\u0027un pont en forme de pièce montée",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

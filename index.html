@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="fr" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pont des saveurs et des cultures de TechnoLOY — Kit Cycle 4</title>
+    <script>
+      (function () {
+        try {
+          var raw = localStorage.getItem('technoloy_pont_saveurs_pwa_v1');
+          var theme = 'dark';
+          if (raw) {
+            var parsed = JSON.parse(raw);
+            if (parsed && (parsed.theme === 'light' || parsed.theme === 'dark')) {
+              theme = parsed.theme;
+            }
+          }
+          document.documentElement.classList.toggle('dark', theme === 'dark');
+        } catch (e) {}
+      })();
+    </script>
+    <meta
+      name="description"
+      content="Kit pédagogique interactif Cycle 4 (5e, 4e, 3e) : concevoir et réaliser la maquette d'un pont en forme de pièce montée — Fête de la Science 2026 Saveur savante, TechnoLOY. Maquette 3D PBR, simulateur mécanique 10 s, parcours DIY 7 étapes, évaluations N1–N4 et mode hors ligne PWA."
+    />
+    <meta property="og:title" content="Pont des saveurs et des cultures de TechnoLOY — Kit Cycle 4" />
+    <meta
+      property="og:description"
+      content="Environnement interactif hors ligne Cycle 4 : maquette 3D PBR, banc mécanique de flexion, séquenceur de fabrication, croquis numérique, évaluations différenciées 5e/4e/3e et fiches A4."
+    />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#0f172a" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Pont Saveurs" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+  </head>
+  <body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased selection:bg-amber-600 selection:text-white">
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

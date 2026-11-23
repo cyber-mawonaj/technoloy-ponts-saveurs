@@ -1,0 +1,2384 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lunettes Connectées à l'IA — Kit Pédagogique Cycle 4 — TechnoLOY Guadeloupe</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js (r128) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Cytoscape.js (v3.28.1) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+    <!-- FontAwesome 6 (Icons) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { 50: '#eff6ff', 100: '#dbeafe', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8', 900: '#1e3a8a' },
+                        guadeloupe: { 400: '#38bdf8', 500: '#0ea5e9', 600: '#0284c7' }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom Styles & EBEP Accessibility */
+        body.ebep-mode {
+            font-size: 1.15rem !important;
+            line-height: 1.65 !important;
+            letter-spacing: 0.03em !important;
+        }
+        body.ebep-mode p, body.ebep-mode li, body.ebep-mode label {
+            font-weight: 500 !important;
+        }
+        .canvas-3d-container {
+            width: 100%;
+            height: 480px;
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+            border-radius: 0.75rem;
+            position: relative;
+            overflow: hidden;
+        }
+        .cytoscape-container {
+            width: 100%;
+            height: 440px;
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+        }
+        .terminal-window {
+            background-color: #0f172a;
+            color: #38bdf8;
+            font-family: 'JetBrains Mono', monospace;
+            border-radius: 0.5rem;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        /* Print Stylesheet */
+        @media print {
+            body { background: white !important; color: black !important; font-size: 11pt !important; }
+            .no-print, header, nav, .tab-btn-container, button { display: none !important; }
+            .print-only { display: block !important; }
+            .tab-content { display: block !important; opacity: 1 !important; visibility: visible !important; }
+            .page-break { page-break-before: always; }
+            .card-print { border: 1px solid #ccc !important; box-shadow: none !important; margin-bottom: 1rem !important; }
+        }
+        .print-only { display: none; }
+    </style>
+</head>
+<body class="h-full text-slate-800 flex flex-col font-sans antialiased selection:bg-brand-500 selection:text-white">
+
+    <!-- HEADER & EMBEDDED STUDENT IDENTIFICATION BAR -->
+    <header class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-50 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+            <div class="flex flex-col lg:flex-row items-center justify-between gap-3">
+                <!-- Branding -->
+                <div class="flex items-center gap-3 w-full lg:w-auto justify-between lg:justify-start">
+                    <div class="flex items-center gap-2">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-guadeloupe-400 flex items-center justify-center text-white shadow-lg shadow-brand-500/30">
+                            <i class="fa-solid fa-glasses text-xl"></i>
+                        </div>
+                        <div>
+                            <h1 class="font-bold text-lg leading-tight tracking-tight text-white flex items-center gap-2">
+                                Lunettes Connectées IA <span class="bg-brand-600 text-xs text-white px-2 py-0.5 rounded-full font-semibold">v2.1</span>
+                            </h1>
+                            <p class="text-xs text-slate-400 font-medium">Kit Pédagogique Cycle 4 (5e / 4e / 3e) — <span class="text-guadeloupe-400 font-semibold">TechnoLOY Guadeloupe</span></p>
+                        </div>
+                    </div>
+                    <!-- Mobile Quick Buttons -->
+                    <div class="flex lg:hidden items-center gap-2">
+                        <button onclick="toggleEbepMode()" id="ebepBtnMob" class="p-2 rounded-lg bg-slate-800 text-amber-400 border border-slate-700 text-xs font-semibold">
+                            <i class="fa-solid fa-universal-access"></i> EBEP
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Persistent Identification Form -->
+                <div class="w-full lg:w-auto bg-slate-800/90 rounded-xl p-2.5 border border-slate-700/80 shadow-inner">
+                    <form id="studentForm" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-xs">
+                        <div>
+                            <label class="block text-slate-400 font-medium mb-0.5">Nom</label>
+                            <input type="text" id="stuNom" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white focus:ring-1 focus:ring-brand-500 outline-none" placeholder="ex: MONDESIR">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 font-medium mb-0.5">Prénom</label>
+                            <input type="text" id="stuPrenom" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white focus:ring-1 focus:ring-brand-500 outline-none" placeholder="ex: KÉLYAN">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 font-medium mb-0.5">Niveau</label>
+                            <select id="stuNiveau" onchange="syncNiveau(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded px-1.5 py-1 text-amber-400 font-semibold focus:ring-1 focus:ring-brand-500 outline-none">
+                                <option value="5e">5e (Sécurité & Lumière)</option>
+                                <option value="4e">4e (Obstacle & OLED)</option>
+                                <option value="3e" selected>3e (IHM & Réseau MQTT)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 font-medium mb-0.5">Classe</label>
+                            <input type="text" id="stuClasse" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white focus:ring-1 focus:ring-brand-500 outline-none" placeholder="ex: 3e B">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 font-medium mb-0.5">Groupe / Binôme</label>
+                            <input type="text" id="stuGroupe" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white focus:ring-1 focus:ring-brand-500 outline-none" placeholder="ex: G3-A">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 font-medium mb-0.5">Date</label>
+                            <input type="date" id="stuDate" class="w-full bg-slate-900 border border-slate-700 rounded px-1.5 py-1 text-white focus:ring-1 focus:ring-brand-500 outline-none">
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Top Toolbar Buttons -->
+                <div class="hidden lg:flex items-center gap-2">
+                    <button onclick="toggleEbepMode()" id="ebepBtn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/30 text-xs font-semibold hover:bg-amber-500/20 transition-all">
+                        <i class="fa-solid fa-universal-access"></i> Mode EBEP (Dys/TSA)
+                    </button>
+                    <button onclick="window.print()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-600 text-white text-xs font-semibold hover:bg-brand-700 shadow-sm transition-all">
+                        <i class="fa-solid fa-print"></i> PDF / Imprimer
+                    </button>
+                    <div id="saveBadge" class="flex items-center gap-1 text-[10px] text-emerald-400 font-medium bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> Sauvegardé
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- PRINT HEADER DISPLAY (VISIBLE ONLY ON PRINT) -->
+    <div class="print-only p-4 border-b-2 border-slate-900 mb-6">
+        <div class="flex justify-between items-start">
+            <div>
+                <h1 class="text-xl font-bold">Lunettes Connectées à l'IA — Kit Pédagogique Cycle 4</h1>
+                <p class="text-xs text-slate-600">TechnoLOY Guadeloupe — Académie de la Guadeloupe</p>
+            </div>
+            <div id="printStudentInfo" class="text-right text-xs font-mono">
+                <!-- Injected dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN TAB NAVIGATION BAR -->
+    <div class="bg-white border-b border-slate-200 sticky top-[65px] z-40 shadow-sm no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <nav class="flex space-x-1 overflow-x-auto py-2 scrollbar-none tab-btn-container" aria-label="Tabs">
+                <button onclick="switchTab(1)" id="tab-btn-1" class="tab-btn inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold whitespace-nowrap bg-brand-50 text-brand-700 border border-brand-200 shadow-sm">
+                    <i class="fa-solid fa-cube"></i> 1. Découverte & 3D (Three.js)
+                </button>
+                <button onclick="switchTab(2)" id="tab-btn-2" class="tab-btn inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold whitespace-nowrap text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all">
+                    <i class="fa-solid fa-microchip"></i> 2. Labo Élec, Blocs & Logigramme
+                </button>
+                <button onclick="switchTab(3)" id="tab-btn-3" class="tab-btn inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold whitespace-nowrap text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all">
+                    <i class="fa-solid fa-network-wired"></i> 3. Réseau, MQTT & IA (Cytoscape)
+                </button>
+                <button onclick="switchTab(4)" id="tab-btn-4" class="tab-btn inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold whitespace-nowrap text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all">
+                    <i class="fa-solid fa-file-pen"></i> 4. Fiches Élèves (5e/4e/3e)
+                </button>
+                <button onclick="switchTab(5)" id="tab-btn-5" class="tab-btn inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold whitespace-nowrap text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all">
+                    <i class="fa-solid fa-table-list"></i> 5. Comparatifs Matériel & Logiciels
+                </button>
+                <button onclick="switchTab(6)" id="tab-btn-6" class="tab-btn inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold whitespace-nowrap text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all">
+                    <i class="fa-solid fa-chalkboard-user"></i> 6. Guide Enseignant (T1-T15)
+                </button>
+                <button onclick="switchTab(7)" id="tab-btn-7" class="tab-btn inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold whitespace-nowrap text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all">
+                    <i class="fa-solid fa-graduation-cap"></i> 7. Révision Cycle 4 (STI Bordeaux)
+                </button>
+            </nav>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT CONTAINER -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <!-- ========================================== -->
+        <!-- TAB 1 : DÉCOUVERTE & 3D (THREE.JS) + DESSINS -->
+        <!-- ========================================== -->
+        <div id="tab-content-1" class="tab-content space-y-6">
+            <!-- M. Loyalle Context Card -->
+            <div class="bg-gradient-to-r from-slate-900 via-brand-900 to-slate-900 text-white rounded-2xl p-5 shadow-lg border border-slate-700 relative overflow-hidden">
+                <div class="absolute -right-6 -bottom-6 text-white/5 text-9xl font-extrabold pointer-events-none">
+                    <i class="fa-solid fa-car-tunnel"></i>
+                </div>
+                <div class="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <div class="space-y-2">
+                        <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-semibold border border-amber-500/30">
+                            <i class="fa-solid fa-user-gear"></i> Fil Rouge Entreprise Loyalle — Usine d'Automobiles Volantes
+                        </div>
+                        <h2 class="text-xl font-bold text-white tracking-tight">Problématique Métier : Assistance AR pour l'Ouvrier de Maintenance</h2>
+                        <p class="text-sm text-slate-300 max-w-3xl leading-relaxed">
+                            Dans l'usine de M. Loyalle, les techniciens interviennent sur des lignes d'assemblage complexes. Le prototype de <span class="text-amber-400 font-semibold">lunettes connectées augmentées</span> doit transmettre des alertes visuelles/sonores directes à l'opérateur et communiquer avec le système décisionnel central.
+                        </p>
+                    </div>
+                    <div class="bg-slate-800/80 backdrop-blur rounded-xl p-3 border border-slate-700 min-w-[220px] text-xs space-y-1">
+                        <div class="text-slate-400 uppercase font-semibold text-[10px] tracking-wider">Sous-problématique active</div>
+                        <div id="dynamicSubProblem" class="font-bold text-brand-300">
+                            [3e] Validation du flux MQTT Broker Mosquitto & IA de détection de risques.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3D Scene Controls & Canvas Wrapper -->
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button onclick="set3DView('assembled')" id="btnViewAssembled" class="px-3 py-1.5 rounded-lg bg-brand-600 text-white text-xs font-semibold shadow-sm hover:bg-brand-700">
+                            <i class="fa-solid fa-cubes"></i> Vue Assemblée
+                        </button>
+                        <button onclick="set3DView('exploded')" id="btnViewExploded" class="px-3 py-1.5 rounded-lg bg-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-300">
+                            <i class="fa-solid fa-arrows-split-up-and-left"></i> Vue Éclatée Annotée
+                        </button>
+                        <button onclick="toggleArOverlay()" id="btnArVision" class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-semibold shadow-sm hover:bg-emerald-700">
+                            <i class="fa-solid fa-eye"></i> Simulation AR Ouvrier
+                        </button>
+                        <button onclick="trigger3DAlert()" class="px-3 py-1.5 rounded-lg bg-rose-600 text-white text-xs font-semibold shadow-sm hover:bg-rose-700">
+                            <i class="fa-solid fa-bell font-bold"></i> Tester Alerte 3D
+                        </button>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-xs text-slate-500 font-medium mr-1"><i class="fa-solid fa-magnifying-glass-plus"></i> Zooms rapides :</span>
+                        <button onclick="zoom3DPreset('ensemble')" class="px-2.5 py-1 rounded bg-white text-slate-700 text-xs border border-slate-300 hover:bg-slate-100 font-medium">Ensemble</button>
+                        <button onclick="zoom3DPreset('microbit')" class="px-2.5 py-1 rounded bg-white text-slate-700 text-xs border border-slate-300 hover:bg-slate-100 font-medium">micro:bit</button>
+                        <button onclick="zoom3DPreset('jst')" class="px-2.5 py-1 rounded bg-white text-slate-700 text-xs border border-slate-300 hover:bg-slate-100 font-medium">Grove JST</button>
+                        <button onclick="zoom3DPreset('camera')" class="px-2.5 py-1 rounded bg-white text-slate-700 text-xs border border-slate-300 hover:bg-slate-100 font-medium">Caméra OV2640</button>
+                        <button onclick="reset3DCamera()" class="p-1.5 rounded bg-slate-200 text-slate-700 text-xs hover:bg-slate-300" title="Réinitialiser caméra"><i class="fa-solid fa-rotate"></i></button>
+                    </div>
+                </div>
+
+                <!-- 3D Canvas Container -->
+                <div class="canvas-3d-container shadow-inner border border-slate-800" id="threeCanvasContainer">
+                    <!-- AR Overlay HTML layer -->
+                    <div id="arHudOverlay" class="hidden absolute inset-0 pointer-events-none p-6 flex flex-col justify-between border-2 border-emerald-500/40 bg-emerald-950/10 backdrop-blur-[1px]">
+                        <div class="flex justify-between items-start font-mono text-emerald-400 text-xs">
+                            <div class="bg-slate-900/80 p-2 rounded border border-emerald-500/40">
+                                <div>[HUD OPERATEUR LOYALLE]</div>
+                                <div>FPS: 60 | LATENCE: 12ms | LINK: OK</div>
+                                <div id="arStatusText" class="text-amber-400 font-bold mt-1">MODE: RECHERCHE ANOMALIE</div>
+                            </div>
+                            <div class="bg-slate-900/80 p-2 rounded border border-emerald-500/40 text-right">
+                                <div>BATTERIE: 88%</div>
+                                <div>BROKER: 10.42.0.1:1883</div>
+                            </div>
+                        </div>
+                        <div class="flex justify-center items-center">
+                            <div class="w-24 h-24 border-2 border-dashed border-emerald-400/60 rounded-full flex items-center justify-center animate-spin" style="animation-duration: 10s;">
+                                <div class="w-2 h-2 bg-emerald-400 rounded-full"></div>
+                            </div>
+                        </div>
+                        <div id="arBannerAlert" class="bg-slate-900/90 text-center text-white py-2 px-4 rounded-lg border border-emerald-500/40 font-mono text-xs font-bold">
+                            RECEPTION DES RECOMMANDATIONS EN TEMPS REEL (MQTT ATELIER/POSTE1/IA)
+                        </div>
+                    </div>
+                    <div class="absolute bottom-3 left-3 bg-slate-900/80 text-white text-[11px] px-3 py-1.5 rounded-lg border border-slate-700 backdrop-blur pointer-events-none flex items-center gap-2">
+                        <i class="fa-solid fa-hand-pointer text-brand-400"></i> Clic gauche + glisser pour tourner | Molette pour zoomer
+                    </div>
+                </div>
+            </div>
+
+            <!-- Poster Functions Grid (8 Core Components) -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+                <h3 class="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-list-check text-brand-600"></i> Nomenclature & Poster Technologique des 8 Fonctions Intégrées
+                </h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <div onclick="highlight3DComponent('cam')" class="p-3 rounded-xl border border-slate-200 hover:border-brand-500 hover:bg-brand-50/50 cursor-pointer transition-all">
+                        <div class="flex items-center gap-2 font-bold text-xs text-brand-700 mb-1">
+                            <span class="w-5 h-5 rounded bg-brand-100 flex items-center justify-center text-brand-800 text-[10px]">01</span> Caméra ESP32-CAM OV2640
+                        </div>
+                        <p class="text-xs text-slate-600">Acquisition vidéo HD & transmission du flux d'analyse d'images vers l'IA.</p>
+                    </div>
+                    <div onclick="highlight3DComponent('microbit')" class="p-3 rounded-xl border border-slate-200 hover:border-brand-500 hover:bg-brand-50/50 cursor-pointer transition-all">
+                        <div class="flex items-center gap-2 font-bold text-xs text-brand-700 mb-1">
+                            <span class="w-5 h-5 rounded bg-brand-100 flex items-center justify-center text-brand-800 text-[10px]">02</span> Carte micro:bit V2
+                        </div>
+                        <p class="text-xs text-slate-600">Unité de calcul locale, matrice 5x5 LED red, boutons A/B, capteurs intégrés.</p>
+                    </div>
+                    <div onclick="highlight3DComponent('shield')" class="p-3 rounded-xl border border-slate-200 hover:border-brand-500 hover:bg-brand-50/50 cursor-pointer transition-all">
+                        <div class="flex items-center gap-2 font-bold text-xs text-brand-700 mb-1">
+                            <span class="w-5 h-5 rounded bg-brand-100 flex items-center justify-center text-brand-800 text-[10px]">03</span> Shield Grove micro:bit
+                        </div>
+                        <p class="text-xs text-slate-600">Interface d'adaptation 4 broches JST (Rouge, Noir, Blanc, Jaune) sécurisées.</p>
+                    </div>
+                    <div onclick="highlight3DComponent('lux')" class="p-3 rounded-xl border border-slate-200 hover:border-brand-500 hover:bg-brand-50/50 cursor-pointer transition-all">
+                        <div class="flex items-center gap-2 font-bold text-xs text-brand-700 mb-1">
+                            <span class="w-5 h-5 rounded bg-brand-100 flex items-center justify-center text-brand-800 text-[10px]">04</span> Capteur Luminosité Grove
+                        </div>
+                        <p class="text-xs text-slate-600">Mesure l'éclairement ambiant (lux) pour déclencher l'éclairage de sécurité.</p>
+                    </div>
+                    <div onclick="highlight3DComponent('ultra')" class="p-3 rounded-xl border border-slate-200 hover:border-brand-500 hover:bg-brand-50/50 cursor-pointer transition-all">
+                        <div class="flex items-center gap-2 font-bold text-xs text-brand-700 mb-1">
+                            <span class="w-5 h-5 rounded bg-brand-100 flex items-center justify-center text-brand-800 text-[10px]">05</span> Capteur Ultrason Grove
+                        </div>
+                        <p class="text-xs text-slate-600">Mesure la distance aux obstacles (cm) par émission/réception d'ondes ultra-sonores.</p>
+                    </div>
+                    <div onclick="highlight3DComponent('buzzer')" class="p-3 rounded-xl border border-slate-200 hover:border-brand-500 hover:bg-brand-50/50 cursor-pointer transition-all">
+                        <div class="flex items-center gap-2 font-bold text-xs text-brand-700 mb-1">
+                            <span class="w-5 h-5 rounded bg-brand-100 flex items-center justify-center text-brand-800 text-[10px]">06</span> Buzzer Piézoélectrique Grove
+                        </div>
+                        <p class="text-xs text-slate-600">Avertisseur sonore d'urgence (bip fréquence 2kHz contrôlé par le microcontrôleur).</p>
+                    </div>
+                    <div onclick="highlight3DComponent('led')" class="p-3 rounded-xl border border-slate-200 hover:border-brand-500 hover:bg-brand-50/50 cursor-pointer transition-all">
+                        <div class="flex items-center gap-2 font-bold text-xs text-brand-700 mb-1">
+                            <span class="w-5 h-5 rounded bg-brand-100 flex items-center justify-center text-brand-800 text-[10px]">07</span> LED Blanche 5mm Grove
+                        </div>
+                        <p class="text-xs text-slate-600">Projecteur frontal d'assistance lumineuse en zone obscure ou nocturne.</p>
+                    </div>
+                    <div onclick="highlight3DComponent('oled')" class="p-3 rounded-xl border border-slate-200 hover:border-brand-500 hover:bg-brand-50/50 cursor-pointer transition-all">
+                        <div class="flex items-center gap-2 font-bold text-xs text-brand-700 mb-1">
+                            <span class="w-5 h-5 rounded bg-brand-100 flex items-center justify-center text-brand-800 text-[10px]">08</span> Afficheur OLED + Prisme AR
+                        </div>
+                        <p class="text-xs text-slate-600">Projection tête haute (HUD) des instructions de travail dans l'œil de l'ouvrier.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NATIVE SVG TECHNICAL DRAWINGS (3-VIEWS + CARTOUCHE) -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-4">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-200 pb-3">
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                            <i class="fa-solid fa-drafting-compass text-brand-600"></i> Dessins Techniques Normalisés (3 Vues & Cartouche ISO)
+                        </h3>
+                        <p class="text-xs text-slate-500">Représentation orthogonale normalisée européenne (Projection ISO E)</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label class="text-xs font-semibold text-slate-700">Mode de vue :</label>
+                        <select id="techDrawSelect" onchange="renderTechnicalDrawing()" class="bg-slate-100 border border-slate-300 text-slate-800 text-xs rounded-lg px-2.5 py-1.5 font-medium focus:ring-2 focus:ring-brand-500 outline-none">
+                            <option value="ortho3">Vue d'ensemble (3 Vues : Face, Gauche, Dessus)</option>
+                            <option value="exploded_annotated">Vue éclatée annotée du châssis</option>
+                            <option value="comp_microbit">Dessin de définition : Carte micro:bit V2</option>
+                            <option value="comp_shield">Dessin de définition : Shield Grove micro:bit</option>
+                            <option value="comp_esp32c3">Dessin de définition : Carte ESP32-C3 SuperMini</option>
+                            <option value="comp_esp32cam">Dessin de définition : Module ESP32-CAM OV2640</option>
+                            <option value="comp_lux">Dessin de définition : Capteur Luminosité Grove</option>
+                            <option value="comp_ultra">Dessin de définition : Capteur Ultrason Grove</option>
+                            <option value="comp_buzzer">Dessin de définition : Module Buzzer Grove</option>
+                            <option value="comp_led">Dessin de définition : Module LED Grove</option>
+                            <option value="comp_oled">Dessin de définition : Afficheur OLED 0.96"</option>
+                            <option value="comp_pico">Dessin de définition : Raspberry Pi Pico W</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- SVG Canvas Wrapper -->
+                <div class="bg-slate-900 rounded-xl p-4 border border-slate-800 overflow-x-auto">
+                    <svg id="svgTechnicalDrawing" viewBox="0 0 900 550" class="w-full h-auto max-h-[600px] min-w-[700px] font-mono text-xs">
+                        <!-- Dynamic SVG technical drawing rendered here -->
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- TAB 2 : LABO ÉLECTRONIQUE, BLOCS & LOGIGRAMME -->
+        <!-- ========================================== -->
+        <div id="tab-content-2" class="tab-content space-y-6 hidden">
+            <!-- Level / Scenario Header Bar -->
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold text-lg border border-amber-500/20">
+                        <i class="fa-solid fa-flask"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-base font-bold text-slate-900">Banc de Test Électronique Interactif</h2>
+                        <p class="text-xs text-slate-500">Choisissez le scenario du niveau pédagogique pour lancer les simulations en temps réel.</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <label class="text-xs font-semibold text-slate-700 whitespace-nowrap">Scénario / Niveau :</label>
+                    <select id="labScenarioSelect" onchange="changeLabScenario(this.value)" class="bg-brand-50 border border-brand-300 text-brand-900 text-xs rounded-lg px-3 py-2 font-bold focus:ring-2 focus:ring-brand-500 outline-none w-full sm:w-auto">
+                        <option value="5e">5e : Eclairage de Sécurité (micro:bit + Luxmetrique + LED + Buzzer)</option>
+                        <option value="4e">4e : Détection d'Obstacle AR (ESP32-C3 + Ultrason + OLED + Buzzer)</option>
+                        <option value="3e">3e : Maquette IHM & Alerte Réseau (micro:bit Boutons A/B + State Machine)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- SVG Interactive Wiring Bench -->
+            <div class="bg-slate-900 rounded-2xl p-5 shadow-lg border border-slate-800 space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <h3 class="text-sm font-bold text-white uppercase tracking-wider">Schéma de Câblage Vectoriel Dynamique</h3>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="toggleBuzzerWireFault()" id="btnWireFault" class="px-3 py-1 rounded bg-rose-500/20 text-rose-300 border border-rose-500/40 text-xs font-medium hover:bg-rose-500/30">
+                            <i class="fa-solid fa-triangle-exclamation"></i> Simuler Panne Buzzer (Séance 4 5e)
+                        </button>
+                        <button onclick="resetWiringBench()" class="px-3 py-1 rounded bg-slate-800 text-slate-300 border border-slate-700 text-xs font-medium hover:bg-slate-700">
+                            <i class="fa-solid fa-rotate-left"></i> Réinitialiser Banc
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Interactive Controls Bar -->
+                <div id="benchInteractiveControls" class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-800/80 p-4 rounded-xl border border-slate-700 text-white text-xs">
+                    <!-- Controls injected dynamically according to scenario -->
+                </div>
+
+                <!-- Wiring Bench SVG Area -->
+                <div class="w-full overflow-x-auto">
+                    <svg id="svgWiringBench" viewBox="0 0 900 400" class="w-full h-auto min-w-[750px]">
+                        <!-- Rendered by JS -->
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Block Code + Collapsible Python Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Visual Block Programming (mBlock FR style) -->
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-3">
+                    <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+                        <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                            <i class="fa-solid fa-cubes-stacked text-amber-500"></i> Logique de Programmation par Blocs (mBlock 5)
+                        </h3>
+                        <span class="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded">Cycle 4</span>
+                    </div>
+                    <div id="mblockContainer" class="font-mono text-xs space-y-1.5 p-3 bg-slate-50 rounded-xl border border-slate-200 text-slate-800">
+                        <!-- Rendered dynamically -->
+                    </div>
+                </div>
+
+                <!-- Collapsible MicroPython Code (Teacher Only) -->
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-3">
+                    <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+                        <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                            <i class="fa-brands fa-python text-blue-600"></i> Équivalent MicroPython (Lecture Enseignant)
+                        </h3>
+                        <button onclick="togglePythonSection()" id="btnTogglePy" class="text-xs text-brand-600 font-semibold hover:underline">
+                            Déplier le code <i class="fa-solid fa-chevron-down ml-1"></i>
+                        </button>
+                    </div>
+                    <div id="pythonCodeContainer" class="hidden font-mono text-xs p-3 bg-slate-900 text-emerald-400 rounded-xl border border-slate-800 overflow-x-auto">
+                        <pre id="pythonCodeText"></pre>
+                    </div>
+                    <p class="text-[11px] text-slate-500 italic">
+                        <i class="fa-solid fa-circle-info text-brand-500"></i> Remarque pédagogique : Les élèves de Cycle 4 conçoivent l'algorithme par blocs. Le code Python ci-dessus est fourni pour l'enseignant ou l'approfondissement en 3e.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Cytoscape.js Interactive Flowchart / Logigramme -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-3">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                            <i class="fa-solid fa-diagram-project text-brand-600"></i> Logigramme Normalisé Réactif (Cytoscape.js)
+                        </h3>
+                        <p class="text-xs text-slate-500">Le chemin actif s'illumine en vert/jaune en temps réel lorsque vous ajustez les variables du banc !</p>
+                    </div>
+                    <div class="flex items-center gap-2 text-xs font-mono">
+                        <span class="inline-flex items-center gap-1 text-slate-600"><span class="w-3 h-3 rounded bg-blue-100 border border-blue-400"></span> Début/Fin</span>
+                        <span class="inline-flex items-center gap-1 text-slate-600"><span class="w-3 h-3 rounded bg-emerald-100 border border-emerald-400"></span> Entrée/Capteur</span>
+                        <span class="inline-flex items-center gap-1 text-slate-600"><span class="w-3 h-3 rounded bg-amber-100 border border-amber-400"></span> Test SI</span>
+                        <span class="inline-flex items-center gap-1 text-slate-600"><span class="w-3 h-3 rounded bg-slate-100 border border-slate-400"></span> Action</span>
+                    </div>
+                </div>
+
+                <div id="cyLogigrammeContainer" class="cytoscape-container shadow-inner"></div>
+            </div>
+
+            <!-- External Tools Cards (Velxio & Bredbord) -->
+            <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200">
+                <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3">Outils Externes Complémentaires Recommandés (Optionnels)</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <a href="https://velxio.dev" target="_blank" rel="noopener noreferrer" class="p-3 bg-white rounded-xl border border-slate-200 hover:border-brand-400 shadow-sm flex items-center justify-between group transition-all">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
+                                <i class="fa-solid fa-code"></i>
+                            </div>
+                            <div>
+                                <h5 class="text-xs font-bold text-slate-900 group-hover:text-brand-600">Velxio Dev Engine</h5>
+                                <p class="text-[11px] text-slate-500">Environnement de simulation et prototypage d'architecture logicielle.</p>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-arrow-up-right-from-square text-xs text-slate-400 group-hover:text-brand-600"></i>
+                    </a>
+                    <a href="https://bredbord.vercel.app/app/" target="_blank" rel="noopener noreferrer" class="p-3 bg-white rounded-xl border border-slate-200 hover:border-brand-400 shadow-sm flex items-center justify-between group transition-all">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                                <i class="fa-solid fa-bread-slice"></i>
+                            </div>
+                            <div>
+                                <h5 class="text-xs font-bold text-slate-900 group-hover:text-brand-600">Bredbord Simulation App</h5>
+                                <p class="text-[11px] text-slate-500">Simulateur virtuel de plaque d'essai électronique (breadboard).</p>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-arrow-up-right-from-square text-xs text-slate-400 group-hover:text-brand-600"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- TAB 3 : RÉSEAU, MQTT & IA (CYTOSCAPE + TERMINAL) -->
+        <!-- ========================================== -->
+        <div id="tab-content-3" class="tab-content space-y-6 hidden">
+            <!-- Topology Configuration Bar -->
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Architecture Réseau Salle / Atelier :</label>
+                    <select id="netArchSelect" onchange="updateNetworkArchitecture()" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-xs rounded-lg p-2 font-medium focus:ring-2 focus:ring-brand-500 outline-none">
+                        <option value="ap">Point d'Accès Dédié ReseauAtelier 2.4 GHz (IP Broker : 10.42.0.1 — Fiche T3bis v2.1)</option>
+                        <option value="lan">Réseau Local Salle Techno (IP Broker : 192.168.1.50 — Décision D1 v1.0)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Convention des Topics Mosquitto MQTT :</label>
+                    <select id="topicConventionSelect" onchange="updateTopicConvention()" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-xs rounded-lg p-2 font-medium focus:ring-2 focus:ring-brand-500 outline-none">
+                        <option value="v21">v2.1 Normalisée : atelier/poste1/capteur, atelier/poste1/ia, etc.</option>
+                        <option value="v10">v1.0 Standard : atelier/lunettes/distance, atelier/lunettes/alerte</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Network Topology Graph (Cytoscape.js) -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-3">
+                <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                            <i class="fa-solid fa-network-wired text-brand-600"></i> Topologie Réseau Local Wi-Fi & Broker MQTT (Cytoscape.js)
+                        </h3>
+                        <p class="text-xs text-slate-500">Cliquez sur un nœud du réseau pour examiner son rôle, son adresse IP et ses ports ouverts.</p>
+                    </div>
+                    <span id="activeBrokerBadge" class="font-mono text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                        BROKER: 10.42.0.1:1883
+                    </span>
+                </div>
+                <div id="cyNetworkContainer" class="cytoscape-container shadow-inner"></div>
+            </div>
+
+            <!-- Terminal Simulator (PuTTY / CMD Windows) -->
+            <div class="terminal-window p-4 space-y-3 border border-slate-700 shadow-2xl">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-2 text-xs">
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-rose-500 inline-block"></span>
+                        <span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span>
+                        <span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>
+                        <span class="font-bold text-slate-300 ml-2">Console Client PuTTY SSH / CMD Windows — Mosquitto Client v2.0.18</span>
+                    </div>
+                    <button onclick="clearTerminal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-trash"></i> Effacer</button>
+                </div>
+
+                <!-- Quick Action Buttons -->
+                <div class="flex flex-wrap gap-2 text-xs font-mono">
+                    <button onclick="execQuickCmd('sub')" class="px-2.5 py-1 rounded bg-slate-800 text-amber-400 hover:bg-slate-700 border border-slate-700">
+                        <i class="fa-solid fa-ear-listen"></i> Sub Topic Atelier
+                    </button>
+                    <button onclick="execQuickCmd('pub_danger')" class="px-2.5 py-1 rounded bg-slate-800 text-rose-400 hover:bg-slate-700 border border-slate-700">
+                        <i class="fa-solid fa-paper-plane"></i> Pub Obstacle (15 cm - DANGER)
+                    </button>
+                    <button onclick="execQuickCmd('pub_ok')" class="px-2.5 py-1 rounded bg-slate-800 text-emerald-400 hover:bg-slate-700 border border-slate-700">
+                        <i class="fa-solid fa-paper-plane"></i> Pub Obstacle (35 cm - RAS)
+                    </button>
+                    <button onclick="execQuickCmd('pub_mode')" class="px-2.5 py-1 rounded bg-slate-800 text-brand-400 hover:bg-slate-700 border border-slate-700">
+                        <i class="fa-solid fa-sliders"></i> Pub Mode Fabrication
+                    </button>
+                </div>
+
+                <!-- Output Display Screen -->
+                <div id="terminalOutput" class="h-48 overflow-y-auto font-mono text-xs space-y-1 p-2 bg-slate-950 rounded border border-slate-800 text-emerald-400 selection:bg-emerald-900">
+                    <div class="text-slate-500">[INFO] Console prête. Cliquez sur un bouton rapide ou saisissez une commande mosquitto_pub / mosquitto_sub.</div>
+                    <div class="text-slate-500">[INFO] Script IA Central T14 (ia_atelier.py) actif sur le Raspberry Pi Broker.</div>
+                </div>
+
+                <!-- Command Input Line -->
+                <form onsubmit="handleTerminalSubmit(event)" class="flex items-center gap-2 pt-2 border-t border-slate-800 font-mono text-xs">
+                    <span class="text-amber-400 font-bold" id="terminalPrompt">pi@raspberrypi:~ $</span>
+                    <input type="text" id="terminalInput" class="flex-grow bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-white focus:outline-none focus:border-brand-500" placeholder="Saisissez mosquitto_pub ou mosquitto_sub...">
+                    <button type="submit" class="px-4 py-1.5 rounded bg-brand-600 text-white font-bold hover:bg-brand-700">Envoyer</button>
+                </form>
+            </div>
+
+            <!-- Mosquitto Commands Cheat Sheet (M. Rousset - Lycée Charles Coeffin) -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-4">
+                <div class="border-b border-slate-200 pb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                            <i class="fa-solid fa-book-bookmark text-brand-600"></i> Fiche Synthèse Commandes Mosquitto MQTT
+                        </h3>
+                        <p class="text-xs text-slate-500">Ressource Enseignant & Élève — Adapté des travaux de M. Rousset (Lycée Charles Coeffin, Baie-Mahault)</p>
+                    </div>
+                    <span class="bg-brand-50 text-brand-700 text-xs font-bold px-3 py-1 rounded-full border border-brand-200">
+                        Syntaxe Mosquitto v2.0
+                    </span>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs text-left text-slate-700 border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-900 font-bold border-b border-slate-300">
+                                <th class="p-2.5">Commande / Option</th>
+                                <th class="p-2.5">Description & Rôle</th>
+                                <th class="p-2.5">Exemple de Syntaxe Réseau</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200 font-mono">
+                            <tr class="hover:bg-slate-50">
+                                <td class="p-2.5 font-bold text-brand-700">mosquitto_sub</td>
+                                <td class="p-2.5 font-sans">S'abonne à un ou plusieurs topics et affiche les messages reçus en continu.</td>
+                                <td class="p-2.5 bg-slate-900 text-emerald-400 rounded">mosquitto_sub -h 10.42.0.1 -t "atelier/#" -v</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50">
+                                <td class="p-2.5 font-bold text-brand-700">mosquitto_pub</td>
+                                <td class="p-2.5 font-sans">Publie une valeur ou une donnée spécifique sur un topic ciblé.</td>
+                                <td class="p-2.5 bg-slate-900 text-emerald-400 rounded">mosquitto_pub -h 10.42.0.1 -t "atelier/poste1/distance" -m "15"</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50">
+                                <td class="p-2.5 font-bold text-slate-900">-h [adresse IP]</td>
+                                <td class="p-2.5 font-sans">Spécifie l'adresse IP du serveur Broker MQTT (ex: 10.42.0.1 ou 192.168.1.50).</td>
+                                <td class="p-2.5 font-sans text-slate-600">-h 10.42.0.1</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50">
+                                <td class="p-2.5 font-bold text-slate-900">-t [topic]</td>
+                                <td class="p-2.5 font-sans">Désigne l'arborescence du sujet (Topic) de publication ou d'abonnement.</td>
+                                <td class="p-2.5 font-sans text-slate-600">-t atelier/poste1/ia</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50">
+                                <td class="p-2.5 font-bold text-slate-900">-m [message]</td>
+                                <td class="p-2.5 font-sans">Contenu utile (payload) transmis dans le paquet MQTT.</td>
+                                <td class="p-2.5 font-sans text-slate-600">-m "ALERTE"</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50">
+                                <td class="p-2.5 font-bold text-amber-700">Joker + (mono-niveau)</td>
+                                <td class="p-2.5 font-sans">Remplace exactement un niveau d'arborescence. Ex: atelier/+/ia écoute poste1, poste2...</td>
+                                <td class="p-2.5 font-sans text-slate-600">atelier/+/ia</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50">
+                                <td class="p-2.5 font-bold text-amber-700">Joker # (multi-niveaux)</td>
+                                <td class="p-2.5 font-sans">Remplace tous les sous-niveaux restants. Doit se placer à la fin du topic.</td>
+                                <td class="p-2.5 font-sans text-slate-600">atelier/#</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Protocol Test Matrix Tool (3e Level) -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-4">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                            <i class="fa-solid fa-stopwatch text-brand-600"></i> Protocole de Test Expérimental & Mesures de Latence (3e)
+                        </h3>
+                        <p class="text-xs text-slate-500">Réalisez la série d'essais pour mesurer le temps de réponse et évaluer les biais de détection.</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="addProtocolRow()" class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700">
+                            <i class="fa-solid fa-plus"></i> Ajouter Essai
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table id="protocolTable" class="w-full text-xs text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-900 font-bold border-b border-slate-300">
+                                <th class="p-2">N° Essai</th>
+                                <th class="p-2">Distance Réelle (cm)</th>
+                                <th class="p-2">Réponse Attendue</th>
+                                <th class="p-2">Réponse Observée</th>
+                                <th class="p-2">Délai / Latence (s)</th>
+                                <th class="p-2">Conforme ?</th>
+                                <th class="p-2">Observation / Biais</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200">
+                            <!-- Filled dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Dynamic Statistics Output -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs">
+                    <div>
+                        <div class="text-slate-500 font-medium">Nombre d'essais enregistrés</div>
+                        <div id="statCount" class="text-lg font-bold text-slate-900">0 / 5</div>
+                    </div>
+                    <div>
+                        <div class="text-slate-500 font-medium">Latence Moyenne du Système</div>
+                        <div id="statAvgDelay" class="text-lg font-bold text-brand-600">0.00 s</div>
+                    </div>
+                    <div>
+                        <div class="text-slate-500 font-medium">Taux de Réussite & Conformité</div>
+                        <div id="statSuccessRate" class="text-lg font-bold text-emerald-600">100 %</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- TAB 4 : FICHES ÉLÈVES (5E / 4E / 3E) -->
+        <!-- ========================================== -->
+        <div id="tab-content-4" class="tab-content space-y-6 hidden">
+            <!-- Student Worksheets Top Toolbar -->
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center font-bold text-lg border border-brand-200">
+                        <i class="fa-solid fa-file-signature"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-base font-bold text-slate-900">Activités Pédagogiques Structurées Cycle 4</h2>
+                        <p class="text-xs text-slate-500">Toutes les réponses saisies sont conservées automatiquement dans votre navigateur.</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="toggleProfSolutions()" id="btnProfMode" class="px-3.5 py-2 rounded-lg bg-amber-50 text-amber-800 border border-amber-300 text-xs font-bold hover:bg-amber-100 transition-all">
+                        <i class="fa-solid fa-key"></i> Mode Professeur : Afficher Corrigés
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dynamic Worksheets Container -->
+            <div id="worksheetsContainer" class="space-y-6">
+                <!-- Rendered dynamically depending on selected grade level -->
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- TAB 5 : COMPARATIFS MATÉRIEL & LOGICIELS -->
+        <!-- ========================================== -->
+        <div id="tab-content-5" class="tab-content space-y-6 hidden">
+            <!-- Hardware Cameras Comparison -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-4">
+                <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-camera text-brand-600"></i> Comparatif Technique des Capteurs Vidéo : ESP32-CAM vs Endoscope USB-C
+                </h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-900 text-white font-bold">
+                                <th class="p-3">Critère Technique</th>
+                                <th class="p-3 bg-brand-900">Module ESP32-CAM OV2640</th>
+                                <th class="p-3 bg-slate-800">Endoscope USB-C 7mm (UVC)</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200">
+                            <tr class="hover:bg-slate-50">
+                                <td class="p-3 font-bold">Résolution d'image</td>
+                                <td class="p-3 font-semibold text-brand-700">UXGA (1600x1200) à SVGA (800x600)</td>
+                                <td class="p-3">HD 720p (1280x720) / VGA (640x480)</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50">
+                                <td class="p-3 font-bold">Protocoles & Interface</td>
+                                <td class="p-3">Wi-Fi 802.11 b/g/n, Stream HTTP / RTSP / MJPEG</td>
+                                <td class="p-3">Standard USB UVC Plug-and-Play (Direct PC / OTG)</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50">
+                                <td class="p-3 font-bold">Alimentation & Conso</td>
+                                <td class="p-3">5V DC (310 mA en pic d'émission Wi-Fi)</td>
+                                <td class="p-3">5V via Port USB (approx. 120 mA avec LED)</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50">
+                                <td class="p-3 font-bold">Éclairage Embarqué</td>
+                                <td class="p-3">Flash LED SMD de puissance sur broche GPIO4</td>
+                                <td class="p-3">6 micro-LEDs réglables à l'extrémité du câble</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50">
+                                <td class="p-3 font-bold">Étanchéité & Forme</td>
+                                <td class="p-3">Carte PCB nue non étanche (nécessite boîtier 3D)</td>
+                                <td class="p-3 font-semibold text-emerald-700">Tête rigide étanche IP67 (7mm de diamètre)</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50">
+                                <td class="p-3 font-bold">Usage Pédagogique privilégié</td>
+                                <td class="p-3 font-sans">Projets autonomes sans fil, IA embarquée, MQTT.</td>
+                                <td class="p-3 font-sans">Inspection mécanique directe, câblage simple sur PC.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Microcontrollers Comparison Table (6 Boards) -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-4">
+                <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-microchip text-brand-600"></i> Matrice Comparative des 6 Cartes Programmables du Kit
+                </h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-900 font-bold border-b border-slate-300">
+                                <th class="p-2.5">Carte Microcontrôleur</th>
+                                <th class="p-2.5">Processeur / Fréquence</th>
+                                <th class="p-2.5">Connectivité Sans Fil</th>
+                                <th class="p-2.5">Entrées / Sorties (GPIO)</th>
+                                <th class="p-2.5">Niveau Recommandé</th>
+                                <th class="p-2.5">Atout Pédagogique Majeur</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200">
+                            <tr class="hover:bg-slate-50">
+                                <td class="p-2.5 font-bold text-slate-900 flex items-center gap-2">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span> micro:bit V2
+                                </td>
+                                <td class="p-2.5">nRF52833 ARM Cortex-M4 @ 64 MHz</td>
+                                <td class="p-2.5">Bluetooth 5.0 / Radio propriétaire</td>
+                                <td class="p-2.5">25 broches edge + Shield Grove</td>
+                                <td class="p-2.5 font-bold text-amber-700">5e / 4e / 3e</td>
+                                <td class="p-2.5">Matrice 5x5 LED, haut-parleur, micro, zéro soudure.</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50">
+                                <td class="p-2.5 font-bold text-slate-900 flex items-center gap-2">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> ESP32-C3 SuperMini
+                                </td>
+                                <td class="p-2.5">RISC-V 32-bit Single-Core @ 160 MHz</td>
+                                <td class="p-2.5 font-semibold text-emerald-700">Wi-Fi 2.4 GHz + BLE 5.0</td>
+                                <td class="p-2.5">11 GPIOs ultra-compactes</td>
+                                <td class="p-2.5 font-bold text-brand-700">4e / 3e</td>
+                                <td class="p-2.5">Format miniature, architecture RISC-V moderne.</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50">
+                                <td class="p-2.5 font-bold text-slate-900 flex items-center gap-2">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span> ESP32-CAM OV2640
+                                </td>
+                                <td class="p-2.5">Xtensa Dual-Core 32-bit @ 240 MHz</td>
+                                <td class="p-2.5 font-semibold text-emerald-700">Wi-Fi 2.4 GHz + BLE</td>
+                                <td class="p-2.5">10 GPIOs + Port Caméra DVP</td>
+                                <td class="p-2.5 font-bold text-purple-700">3e / Projet IA</td>
+                                <td class="p-2.5">Acquisition d'images et streaming vidéo web.</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50">
+                                <td class="p-2.5 font-bold text-slate-900 flex items-center gap-2">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Raspberry Pi Pico W
+                                </td>
+                                <td class="p-2.5">RP2040 Dual ARM Cortex-M0+ @ 133 MHz</td>
+                                <td class="p-2.5 font-semibold text-emerald-700">Wi-Fi 802.11n (CYW43439)</td>
+                                <td class="p-2.5">26 GPIOs multifonctions</td>
+                                <td class="p-2.5 font-bold text-brand-700">4e / 3e</td>
+                                <td class="p-2.5">Brochage clair, MicroPython ultra-stable.</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50">
+                                <td class="p-2.5 font-bold text-slate-900 flex items-center gap-2">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Raspberry Pi 400
+                                </td>
+                                <td class="p-2.5">Broadcom BCM2711 Quad-Core @ 1.8 GHz</td>
+                                <td class="p-2.5">Wi-Fi Dual-Band + Gigabit Ethernet</td>
+                                <td class="p-2.5">40 broches GPIO standards</td>
+                                <td class="p-2.5 font-bold text-slate-700">Prof / Serveur</td>
+                                <td class="p-2.5">Serveur Broker Mosquitto & Script IA Central.</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50 opacity-75">
+                                <td class="p-2.5 font-bold text-slate-600 flex items-center gap-2">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-slate-400"></span> ESP-12F / ESP8266
+                                </td>
+                                <td class="p-2.5">Tensilica L106 32-bit @ 80 MHz</td>
+                                <td class="p-2.5">Wi-Fi 802.11 b/g/n</td>
+                                <td class="p-2.5">9 GPIOs (limitées)</td>
+                                <td class="p-2.5 text-slate-500">Fin de vie (Legacy)</td>
+                                <td class="p-2.5 text-slate-500">Conservé pour compatibilité des anciens kits v1.0.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Software Tools Comparison Table -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-4">
+                <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-laptop-code text-brand-600"></i> Comparatif des Logiciels & Environnements de Programmation
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
+                        <div class="font-bold text-slate-900 text-sm flex items-center gap-2">
+                            <i class="fa-solid fa-cubes text-amber-500"></i> mBlock 5 (Makeblock)
+                        </div>
+                        <p class="text-xs text-slate-600">Programmation par blocs visuels drag-and-drop. Idéal pour 5e / 4e. Supporte micro:bit et ESP32 via extensions.</p>
+                    </div>
+                    <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
+                        <div class="font-bold text-slate-900 text-sm flex items-center gap-2">
+                            <i class="fa-solid fa-puzzle-piece text-orange-500"></i> MakeCode micro:bit
+                        </div>
+                        <p class="text-xs text-slate-600">Environnement officiel Microsoft en ligne. Simulation temps réel, blocs & JavaScript/Python intégrés.</p>
+                    </div>
+                    <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
+                        <div class="font-bold text-slate-900 text-sm flex items-center gap-2">
+                            <i class="fa-brands fa-python text-blue-600"></i> Thonny IDE
+                        </div>
+                        <p class="text-xs text-slate-600">IDE Python/MicroPython épuré pour PC et Raspberry Pi. Gestion du REPL en direct et téléversement des scripts.</p>
+                    </div>
+                    <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
+                        <div class="font-bold text-slate-900 text-sm flex items-center gap-2">
+                            <i class="fa-solid fa-terminal text-slate-800"></i> Client PuTTY / CMD
+                        </div>
+                        <p class="text-xs text-slate-600">Outil de commande réseau SSH et souscription/publication MQTT via les utilitaires `mosquitto_pub` et `sub`.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- TAB 6 : GUIDE ENSEIGNANT (FICHES T1 À T15) -->
+        <!-- ========================================== -->
+        <div id="tab-content-6" class="tab-content space-y-6 hidden">
+            <!-- Teacher Guide Intro -->
+            <div class="bg-slate-900 text-white rounded-2xl p-5 shadow-lg border border-slate-800 flex items-center justify-between">
+                <div>
+                    <h2 class="text-lg font-bold">Fiches Techniques Enseignant T1 à T15 — Kit Pédagogique v2.1</h2>
+                    <p class="text-xs text-slate-300">Guides de déploiement réseau, configurations serveurs, scripts Python et différenciation EBEP.</p>
+                </div>
+                <span class="bg-brand-600 text-white text-xs font-bold px-3 py-1 rounded-full">TechnoLOY Guadeloupe</span>
+            </div>
+
+            <!-- Fiches Accordion Container -->
+            <div class="space-y-3" id="teacherCardsAccordion">
+                <!-- Cards T1 to T15 rendered via JavaScript for maximum clarity & copyable code blocks -->
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- TAB 7 : RÉVISION CYCLE 4 (STI BORDEAUX) -->
+        <!-- ========================================== -->
+        <div id="tab-content-7" class="tab-content space-y-6 hidden">
+            <!-- Official Link Banner Card -->
+            <div class="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white rounded-2xl p-6 shadow-xl border border-indigo-700/50 flex flex-col md:flex-row items-center justify-between gap-6">
+                <div class="space-y-2">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-bold border border-blue-400/30">
+                        <i class="fa-solid fa-certificate"></i> Ressources Officielles Éducation Nationale
+                    </div>
+                    <h2 class="text-xl font-bold">Plateforme de Révision & Séquences STI — Académie de Bordeaux</h2>
+                    <p class="text-xs text-slate-300 max-w-2xl leading-relaxed">
+                        Accédez aux fiches de synthèses nationales, activités de révision et ressources pédagogiques pour le programme de Technologie en Cycle 4.
+                    </p>
+                </div>
+                <a href="https://sequences.sti-ac-bordeaux.fr/#ressources" target="_blank" rel="noopener noreferrer" class="px-5 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold text-xs shadow-lg hover:brightness-110 transition-all whitespace-nowrap flex items-center gap-2">
+                    Ouvrir STI Bordeaux <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                </a>
+            </div>
+
+            <!-- Programme Themes Breakdown (BO n°9 du 29 février 2024) -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-3">
+                    <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-base">T1</div>
+                    <h3 class="font-bold text-slate-900 text-sm">Thème 1 : Les objets techniques, les services et les changements sociétaux</h3>
+                    <p class="text-xs text-slate-600 leading-relaxed">Impact de l'IA et des objets connectés sur les métiers industriels. Analyse du besoin, de la sécurité au travail et du respect de la vie privée.</p>
+                </div>
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-3">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-base">T2</div>
+                    <h3 class="font-bold text-slate-900 text-sm">Thème 2 : Modélisation et comportement des systèmes</h3>
+                    <p class="text-xs text-slate-600 leading-relaxed">Chaîne d'information et chaîne d'énergie. Modélisation par logigramme, algorithmes conditionnels, capteurs et actionneurs.</p>
+                </div>
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-3">
+                    <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-base">T3</div>
+                    <h3 class="font-bold text-slate-900 text-sm">Thème 3 : Démarche de création, conception et réalisation</h3>
+                    <p class="text-xs text-slate-600 leading-relaxed">Prototypage rapide 3D, tests expérimentaux, protocoles de mesure, correction des dysfonctionnements et communication réseau.</p>
+                </div>
+            </div>
+
+            <!-- Interactive Searchable Glossary -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-4">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-200 pb-3">
+                    <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                        <i class="fa-solid fa-spell-check text-brand-600"></i> Glossaire Pédagogique Interactif Cycle 4
+                    </h3>
+                    <div class="w-full sm:w-64">
+                        <input type="text" id="glossarySearch" oninput="filterGlossary()" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-xs text-slate-800 focus:ring-2 focus:ring-brand-500 outline-none" placeholder="Rechercher un terme (ex: MQTT, IP, EBEP)...">
+                    </div>
+                </div>
+
+                <div id="glossaryGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Dynamic glossary items -->
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-slate-900 text-slate-400 border-t border-slate-800 py-6 mt-12 no-print">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs space-y-2">
+            <p class="font-semibold text-slate-300">
+                Kit Pédagogique « Lunettes Connectées IA » — Cycle 4 Technologie (5e / 4e / 3e)
+            </p>
+            <p class="text-slate-500">
+                Développé pour l'Académie de la Guadeloupe par TechnoLOY Guadeloupe & M. Loyalle — Conforme au programme national de Technologie (BO n°9 du 29 février 2024).
+            </p>
+        </div>
+    </footer>
+
+    <!-- NON-BLOCKING TOAST NOTIFICATION -->
+    <div id="appToast" class="fixed bottom-5 right-5 z-50 hidden max-w-sm bg-slate-900 text-white text-xs px-4 py-3 rounded-xl shadow-2xl border border-brand-500/50 transition-all no-print">
+        <div class="flex items-start gap-2.5">
+            <i id="appToastIcon" class="fa-solid fa-circle-info text-brand-400 mt-0.5"></i>
+            <div id="appToastMsg" class="whitespace-pre-line leading-relaxed"></div>
+        </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- JAVASCRIPT APP CORE ENGINE -->
+    <!-- ================================================================= -->
+    <script>
+        // Non-blocking toast notification helper
+        let toastTimer = null;
+        function showToast(message, isSuccess = false) {
+            const toast = document.getElementById('appToast');
+            const msgEl = document.getElementById('appToastMsg');
+            const iconEl = document.getElementById('appToastIcon');
+            if (!toast || !msgEl) return;
+            msgEl.textContent = message;
+            iconEl.className = isSuccess
+                ? 'fa-solid fa-circle-check text-emerald-400 mt-0.5'
+                : 'fa-solid fa-circle-info text-brand-400 mt-0.5';
+            toast.classList.remove('hidden');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => toast.classList.add('hidden'), 4000);
+        }
+
+        // -------------------------------------------------------------
+        // APP STATE & LOCALSTORAGE PERSISTENCE
+        // -------------------------------------------------------------
+        const STATE = {
+            currentTab: 1,
+            niveau: '3e',
+            ebepMode: false,
+            profMode: false,
+            studentInfo: { nom: '', prenom: '', niveau: '3e', classe: '', groupe: '', date: '' },
+            
+            // Lab 2 State
+            labScenario: '5e',
+            luxValue: 40,
+            luxThreshold: 50,
+            distValue: 15,
+            distThreshold: 20,
+            btnAPressed: false,
+            btnBPressed: false,
+            buzzerFault: false,
+            
+            // Lab 3 State
+            netArch: 'ap', // 'ap' (10.42.0.1) or 'lan' (192.168.1.50)
+            topicConvention: 'v21',
+            brokerIp: '10.42.0.1',
+            protocolRows: [],
+            
+            // 3D View State
+            viewMode3D: 'assembled', // 'assembled' or 'exploded'
+            arOverlay: false
+        };
+
+        // Web Audio API Synth for Piezo Buzzer
+        let audioCtx = null;
+        function playBuzzerTone(freq = 2000, duration = 150) {
+            if (STATE.ebepMode) return; // Silent mode for EBEP
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + (duration/1000));
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + (duration/1000));
+            } catch(e) { console.warn("Audio context not allowed yet", e); }
+        }
+
+        // -------------------------------------------------------------
+        // INITIALIZATION ON WINDOW LOAD
+        // -------------------------------------------------------------
+        window.addEventListener('load', () => {
+            loadStudentInfo();
+            init3DScene();
+            renderTechnicalDrawing();
+            initWiringBench();
+            initCytoscapeLogigramme();
+            initCytoscapeNetwork();
+            renderWorksheets();
+            initProtocolTable();
+            renderGlossary();
+            renderTeacherAccordion();
+            
+            // Synchronize UI
+            syncNiveau(STATE.studentInfo.niveau || '3e');
+            
+            // Window resize handlers
+            window.addEventListener('resize', () => {
+                if (renderer3D && camera3D && threeContainer) {
+                    camera3D.aspect = threeContainer.clientWidth / threeContainer.clientHeight;
+                    camera3D.updateProjectionMatrix();
+                    renderer3D.setSize(threeContainer.clientWidth, threeContainer.clientHeight);
+                }
+                if (cyLogigramme) cyLogigramme.resize();
+                if (cyNetwork) cyNetwork.resize();
+            });
+        });
+
+        // Save & Load LocalStorage
+        function loadStudentInfo() {
+            const saved = localStorage.getItem('technoloy_lunettes_student');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    STATE.studentInfo = parsed;
+                    document.getElementById('stuNom').value = parsed.nom || '';
+                    document.getElementById('stuPrenom').value = parsed.prenom || '';
+                    document.getElementById('stuNiveau').value = parsed.niveau || '3e';
+                    document.getElementById('stuClasse').value = parsed.classe || '';
+                    document.getElementById('stuGroupe').value = parsed.groupe || '';
+                    document.getElementById('stuDate').value = parsed.date || new Date().toISOString().split('T')[0];
+                } catch(e) {}
+            } else {
+                document.getElementById('stuDate').value = new Date().toISOString().split('T')[0];
+            }
+
+            // Form Event Listeners
+            ['stuNom', 'stuPrenom', 'stuNiveau', 'stuClasse', 'stuGroupe', 'stuDate'].forEach(id => {
+                document.getElementById(id).addEventListener('input', saveStudentInfo);
+            });
+        }
+
+        function saveStudentInfo() {
+            STATE.studentInfo = {
+                nom: document.getElementById('stuNom').value,
+                prenom: document.getElementById('stuPrenom').value,
+                niveau: document.getElementById('stuNiveau').value,
+                classe: document.getElementById('stuClasse').value,
+                groupe: document.getElementById('stuGroupe').value,
+                date: document.getElementById('stuDate').value
+            };
+            localStorage.setItem('technoloy_lunettes_student', JSON.stringify(STATE.studentInfo));
+            
+            const badge = document.getElementById('saveBadge');
+            badge.classList.remove('opacity-50');
+            badge.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> Sauvegardé ${new Date().toLocaleTimeString()}`;
+            
+            renderTechnicalDrawing(); // Refresh cartouche
+            updatePrintHeader();
+        }
+
+        function updatePrintHeader() {
+            const info = STATE.studentInfo;
+            document.getElementById('printStudentInfo').innerHTML = `
+                Élève: ${info.prenom} ${info.nom} (${info.niveau} - ${info.classe})<br>
+                Groupe: ${info.groupe} | Date: ${info.date}
+            `;
+        }
+
+        function syncNiveau(val) {
+            STATE.niveau = val;
+            STATE.studentInfo.niveau = val;
+            
+            // Subproblem text update
+            const el = document.getElementById('dynamicSubProblem');
+            if (val === '5e') {
+                el.innerText = "[5e] Sécurité de l'ouvrier en zone sombre — Capteur de luminosité & Avertisseur visuel/sonore.";
+                STATE.labScenario = '5e';
+            } else if (val === '4e') {
+                el.innerText = "[4e] Détection d'obstacle & affichage tête haute — Capteur ultrason & OLED ESP32-C3.";
+                STATE.labScenario = '4e';
+            } else {
+                el.innerText = "[3e] Architecture IHM & validation du flux réseau MQTT Broker Mosquitto avec script IA.";
+                STATE.labScenario = '3e';
+            }
+            
+            document.getElementById('labScenarioSelect').value = STATE.labScenario;
+            changeLabScenario(STATE.labScenario);
+            renderWorksheets();
+            saveStudentInfo();
+        }
+
+        // EBEP Accessibility Mode Toggle
+        function toggleEbepMode() {
+            STATE.ebepMode = !STATE.ebepMode;
+            document.body.classList.toggle('ebep-mode', STATE.ebepMode);
+            const btn = document.getElementById('ebepBtn');
+            if (STATE.ebepMode) {
+                btn.classList.add('bg-amber-500', 'text-slate-950');
+                btn.classList.remove('bg-amber-500/10', 'text-amber-400');
+                btn.innerHTML = `<i class="fa-solid fa-universal-access"></i> Mode EBEP ACTIF (Dys/TSA)`;
+            } else {
+                btn.classList.remove('bg-amber-500', 'text-slate-950');
+                btn.classList.add('bg-amber-500/10', 'text-amber-400');
+                btn.innerHTML = `<i class="fa-solid fa-universal-access"></i> Mode EBEP (Dys/TSA)`;
+            }
+        }
+
+        // Tab Switch Logic
+        function switchTab(index) {
+            STATE.currentTab = index;
+            document.querySelectorAll('.tab-content').forEach((el, i) => {
+                if (i + 1 === index) {
+                    el.classList.remove('hidden');
+                } else {
+                    el.classList.add('hidden');
+                }
+            });
+
+            document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+                if (i + 1 === index) {
+                    btn.className = "tab-btn inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold whitespace-nowrap bg-brand-50 text-brand-700 border border-brand-200 shadow-sm";
+                } else {
+                    btn.className = "tab-btn inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold whitespace-nowrap text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all";
+                }
+            });
+
+            // Trigger canvas & cytoscape resizes
+            setTimeout(() => {
+                if (index === 1 && renderer3D && camera3D && threeContainer) {
+                    camera3D.aspect = threeContainer.clientWidth / threeContainer.clientHeight;
+                    camera3D.updateProjectionMatrix();
+                    renderer3D.setSize(threeContainer.clientWidth, threeContainer.clientHeight);
+                }
+                if (index === 2 && cyLogigramme) {
+                    cyLogigramme.resize();
+                    cyLogigramme.fit();
+                }
+                if (index === 3 && cyNetwork) {
+                    cyNetwork.resize();
+                    cyNetwork.fit();
+                }
+            }, 60);
+        }
+
+        // -------------------------------------------------------------
+        // MODULE 1 : THREE.JS 3D SCENE & SVG TECHNICAL DRAWINGS
+        // -------------------------------------------------------------
+        let scene3D, camera3D, renderer3D, threeContainer;
+        let glassesGroup, explodedParts = {};
+        let isDragging3D = false, previousMousePosition = { x: 0, y: 0 };
+        let ledMatrixMeshes = [];
+
+        function init3DScene() {
+            threeContainer = document.getElementById('threeCanvasContainer');
+            if (!threeContainer) return;
+
+            scene3D = new THREE.Scene();
+            scene3D.background = new THREE.Color(0x0f172a);
+
+            camera3D = new THREE.PerspectiveCamera(45, threeContainer.clientWidth / threeContainer.clientHeight, 0.1, 1000);
+            camera3D.position.set(0, 15, 35);
+
+            renderer3D = new THREE.WebGLRenderer({ antialias: true });
+            renderer3D.setSize(threeContainer.clientWidth, threeContainer.clientHeight);
+            renderer3D.shadowMap.enabled = true;
+            threeContainer.appendChild(renderer3D.domElement);
+
+            // Lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+            scene3D.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight.position.set(20, 40, 20);
+            scene3D.add(dirLight);
+
+            const pointLight = new THREE.PointLight(0x38bdf8, 0.5, 50);
+            pointLight.position.set(-10, 10, 10);
+            scene3D.add(pointLight);
+
+            // Parent Group for Glasses Assembly
+            glassesGroup = new THREE.Group();
+            scene3D.add(glassesGroup);
+
+            // 1. Glasses Frame (Châssis Lunettes 3D)
+            const frameMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.3, metalness: 0.8 });
+            
+            // Front Bar
+            const frontBarGeo = new THREE.BoxGeometry(22, 1.2, 0.8);
+            const frontBar = new THREE.Mesh(frontBarGeo, frameMat);
+            glassesGroup.add(frontBar);
+            explodedParts.frame = frontBar;
+
+            // Lenses (Guide d'onde AR)
+            const lensMat = new THREE.MeshPhysicalMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.35, roughness: 0.1, transmission: 0.9 });
+            const leftLens = new THREE.Mesh(new THREE.BoxGeometry(7, 5, 0.3), lensMat);
+            leftLens.position.set(-5.5, -2.5, 0);
+            const rightLens = new THREE.Mesh(new THREE.BoxGeometry(7, 5, 0.3), lensMat);
+            rightLens.position.set(5.5, -2.5, 0);
+            glassesGroup.add(leftLens);
+            glassesGroup.add(rightLens);
+
+            // Temples (Branches)
+            const templeLeft = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1, 18), frameMat);
+            templeLeft.position.set(-11, 0, -9);
+            const templeRight = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1, 18), frameMat);
+            templeRight.position.set(11, 0, -9);
+            glassesGroup.add(templeLeft);
+            glassesGroup.add(templeRight);
+
+            // 2. Micro:bit V2 PCB & Matrix
+            const microbitGroup = new THREE.Group();
+            const pcbGeo = new THREE.BoxGeometry(8, 0.4, 5);
+            const pcbMat = new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 0.4 });
+            const pcbMesh = new THREE.Mesh(pcbGeo, pcbMat);
+            microbitGroup.add(pcbMesh);
+
+            // Gold Edge Connector
+            const goldMat = new THREE.MeshStandardMaterial({ color: 0xeab308, metalness: 0.9, roughness: 0.2 });
+            const edgeConn = new THREE.Mesh(new THREE.BoxGeometry(8.1, 0.42, 0.8), goldMat);
+            edgeConn.position.set(0, 0, 2.3);
+            microbitGroup.add(edgeConn);
+
+            // 5x5 LED Matrix Grid
+            const ledMatOff = new THREE.MeshBasicMaterial({ color: 0x334155 });
+            ledMatrixMeshes = [];
+            for (let r = 0; r < 5; r++) {
+                for (let c = 0; c < 5; c++) {
+                    const led = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.2, 0.4), ledMatOff.clone());
+                    led.position.set(-2 + c * 1.0, 0.25, -1.5 + r * 0.8);
+                    microbitGroup.add(led);
+                    ledMatrixMeshes.push(led);
+                }
+            }
+
+            // Buttons A & B
+            const btnMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.5 });
+            const btnA = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.4, 16), btnMat);
+            btnA.position.set(-3.2, 0.3, 0.5);
+            const btnB = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.4, 16), btnMat);
+            btnB.position.set(3.2, 0.3, 0.5);
+            microbitGroup.add(btnA);
+            microbitGroup.add(btnB);
+
+            microbitGroup.position.set(-7, 2, -2);
+            glassesGroup.add(microbitGroup);
+            explodedParts.microbit = microbitGroup;
+
+            // 3. Shield Grove
+            const shieldGroup = new THREE.Group();
+            const shieldMesh = new THREE.Mesh(new THREE.BoxGeometry(8.5, 0.5, 5.5), new THREE.MeshStandardMaterial({ color: 0x0284c7 }));
+            shieldGroup.add(shieldMesh);
+            // 4 White JST Sockets
+            const jstMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc });
+            for(let i=0; i<4; i++) {
+                const jst = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.8, 1.2), jstMat);
+                jst.position.set(-3 + i*2, 0.5, -2);
+                shieldGroup.add(jst);
+            }
+            shieldGroup.position.set(-7, 1.2, -2);
+            glassesGroup.add(shieldGroup);
+            explodedParts.shield = shieldGroup;
+
+            // 4. ESP32-CAM Module
+            const camGroup = new THREE.Group();
+            const camPcb = new THREE.Mesh(new THREE.BoxGeometry(4, 0.4, 5), new THREE.MeshStandardMaterial({ color: 0x15803d }));
+            const lensHolder = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 0.8, 16), new THREE.MeshStandardMaterial({ color: 0x0f172a }));
+            lensHolder.rotation.x = Math.PI/2;
+            lensHolder.position.set(0, 0.5, 1.5);
+            camGroup.add(camPcb);
+            camGroup.add(lensHolder);
+            camGroup.position.set(7, 2, -2);
+            glassesGroup.add(camGroup);
+            explodedParts.camera = camGroup;
+
+            // 5. Piezo Buzzer Module
+            const buzzerGroup = new THREE.Group();
+            const buzzCyl = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 0.8, 24), new THREE.MeshStandardMaterial({ color: 0x0f172a }));
+            buzzerGroup.add(buzzCyl);
+            buzzerGroup.position.set(11, 2, -5);
+            glassesGroup.add(buzzerGroup);
+            explodedParts.buzzer = buzzerGroup;
+
+            // 6. OLED Display HUD
+            const oledGroup = new THREE.Group();
+            const oledScreen = new THREE.Mesh(new THREE.BoxGeometry(3.5, 2.5, 0.3), new THREE.MeshBasicMaterial({ color: 0x0284c7 }));
+            oledGroup.add(oledScreen);
+            oledGroup.position.set(5.5, -2.5, 0.5);
+            glassesGroup.add(oledGroup);
+            explodedParts.oled = oledGroup;
+
+            // Mouse Drag Control for 3D Orbiting
+            const dom = renderer3D.domElement;
+            dom.addEventListener('mousedown', (e) => { isDragging3D = true; previousMousePosition = { x: e.clientX, y: e.clientY }; });
+            dom.addEventListener('mousemove', (e) => {
+                if (!isDragging3D) return;
+                const deltaX = e.clientX - previousMousePosition.x;
+                const deltaY = e.clientY - previousMousePosition.y;
+                glassesGroup.rotation.y += deltaX * 0.01;
+                glassesGroup.rotation.x += deltaY * 0.01;
+                previousMousePosition = { x: e.clientX, y: e.clientY };
+            });
+            dom.addEventListener('mouseup', () => isDragging3D = false);
+            dom.addEventListener('mouseleave', () => isDragging3D = false);
+            dom.addEventListener('wheel', (e) => {
+                camera3D.position.z += e.deltaY * 0.03;
+                camera3D.position.z = Math.max(10, Math.min(80, camera3D.position.z));
+            });
+
+            // Render Loop
+            function animate3D() {
+                requestAnimationFrame(animate3D);
+                renderer3D.render(scene3D, camera3D);
+            }
+            animate3D();
+        }
+
+        function set3DView(mode) {
+            STATE.viewMode3D = mode;
+            const btnA = document.getElementById('btnViewAssembled');
+            const btnE = document.getElementById('btnViewExploded');
+
+            if (mode === 'exploded') {
+                btnE.className = "px-3 py-1.5 rounded-lg bg-brand-600 text-white text-xs font-semibold shadow-sm";
+                btnA.className = "px-3 py-1.5 rounded-lg bg-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-300";
+                // Explode Parts
+                if (explodedParts.microbit) explodedParts.microbit.position.set(-14, 8, -5);
+                if (explodedParts.shield) explodedParts.shield.position.set(-14, 1, -5);
+                if (explodedParts.camera) explodedParts.camera.position.set(14, 8, -5);
+                if (explodedParts.buzzer) explodedParts.buzzer.position.set(16, 2, -10);
+                if (explodedParts.oled) explodedParts.oled.position.set(10, -8, 5);
+            } else {
+                btnA.className = "px-3 py-1.5 rounded-lg bg-brand-600 text-white text-xs font-semibold shadow-sm";
+                btnE.className = "px-3 py-1.5 rounded-lg bg-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-300";
+                // Reset Assembly
+                if (explodedParts.microbit) explodedParts.microbit.position.set(-7, 2, -2);
+                if (explodedParts.shield) explodedParts.shield.position.set(-7, 1.2, -2);
+                if (explodedParts.camera) explodedParts.camera.position.set(7, 2, -2);
+                if (explodedParts.buzzer) explodedParts.buzzer.position.set(11, 2, -5);
+                if (explodedParts.oled) explodedParts.oled.position.set(5.5, -2.5, 0.5);
+            }
+        }
+
+        function zoom3DPreset(preset) {
+            if (preset === 'ensemble') {
+                camera3D.position.set(0, 15, 35);
+            } else if (preset === 'microbit') {
+                camera3D.position.set(-7, 5, 12);
+            } else if (preset === 'jst') {
+                camera3D.position.set(-7, 3, 8);
+            } else if (preset === 'camera') {
+                camera3D.position.set(7, 4, 10);
+            }
+        }
+
+        function reset3DCamera() {
+            camera3D.position.set(0, 15, 35);
+            glassesGroup.rotation.set(0, 0, 0);
+        }
+
+        function toggleArOverlay() {
+            STATE.arOverlay = !STATE.arOverlay;
+            const hud = document.getElementById('arHudOverlay');
+            hud.classList.toggle('hidden', !STATE.arOverlay);
+        }
+
+        function trigger3DAlert() {
+            playBuzzerTone(2400, 300);
+            // Flash LED matrix red
+            ledMatrixMeshes.forEach(led => {
+                led.material.color.setHex(0xf43f5e);
+            });
+            setTimeout(() => {
+                ledMatrixMeshes.forEach(led => {
+                    led.material.color.setHex(0x334155);
+                });
+            }, 1200);
+
+            if (STATE.arOverlay) {
+                const txt = document.getElementById('arStatusText');
+                txt.className = "text-rose-400 font-bold mt-1 animate-bounce";
+                txt.innerText = "!!! ALERTE DANGER OBSTACLE DETECTE !!!";
+                setTimeout(() => {
+                    txt.className = "text-amber-400 font-bold mt-1";
+                    txt.innerText = "MODE: RECHERCHE ANOMALIE";
+                }, 2000);
+            }
+        }
+
+        function highlight3DComponent(compKey) {
+            if (compKey === 'microbit' || compKey === 'shield') zoom3DPreset('microbit');
+            else if (compKey === 'cam') zoom3DPreset('camera');
+            else zoom3DPreset('ensemble');
+            trigger3DAlert();
+        }
+
+        // SVG Technical Drawings Renderer
+        function renderTechnicalDrawing() {
+            const svg = document.getElementById('svgTechnicalDrawing');
+            const mode = document.getElementById('techDrawSelect').value;
+            const info = STATE.studentInfo;
+            
+            let content = '';
+
+            // Grid background
+            content += `<defs>
+                <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                    <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#1e293b" stroke-width="0.5"/>
+                </pattern>
+            </defs>
+            <rect width="900" height="550" fill="#0f172a"/>
+            <rect width="900" height="550" fill="url(#grid)" />`;
+
+            // Draw content based on mode
+            if (mode === 'ortho3') {
+                // 3 Views : Face, Gauche, Dessus
+                content += `
+                <!-- View Labels -->
+                <text x="220" y="40" fill="#38bdf8" font-size="14" font-weight="bold">VUE DE FACE</text>
+                <text x="600" y="40" fill="#38bdf8" font-size="14" font-weight="bold">VUE DE GAUCHE</text>
+                <text x="220" y="270" fill="#38bdf8" font-size="14" font-weight="bold">VUE DE DESSUS</text>
+
+                <!-- VUE DE FACE -->
+                <g stroke="#38bdf8" stroke-width="2" fill="none">
+                    <!-- Glasses Front Outline -->
+                    <rect x="100" y="80" width="280" height="15" rx="3" stroke="#f8fafc"/>
+                    <rect x="130" y="95" width="90" height="70" rx="6"/>
+                    <rect x="260" y="95" width="90" height="70" rx="6"/>
+                    <path d="M 220 95 Q 240 105 260 95"/>
+                    <!-- Component Callouts -->
+                    <rect x="110" y="60" width="80" height="30" stroke="#eab308" stroke-dasharray="3,3"/>
+                    <text x="120" y="78" fill="#eab308" font-size="10" stroke="none">micro:bit V2</text>
+                    <rect x="290" y="60" width="80" height="30" stroke="#10b981" stroke-dasharray="3,3"/>
+                    <text x="298" y="78" fill="#10b981" font-size="10" stroke="none">ESP32-CAM</text>
+                </g>
+
+                <!-- VUE DE GAUCHE -->
+                <g stroke="#38bdf8" stroke-width="2" fill="none">
+                    <rect x="560" y="80" width="15" height="85" rx="3" stroke="#f8fafc"/>
+                    <rect x="575" y="80" width="200" height="12" rx="2"/>
+                    <!-- Projection Lines -->
+                    <line x1="380" y1="87" x2="560" y2="87" stroke="#475569" stroke-dasharray="2,2" stroke-width="1"/>
+                    <line x1="380" y1="165" x2="560" y2="165" stroke="#475569" stroke-dasharray="2,2" stroke-width="1"/>
+                </g>
+
+                <!-- VUE DE DESSUS -->
+                <g stroke="#38bdf8" stroke-width="2" fill="none">
+                    <rect x="100" y="300" width="280" height="15" rx="3" stroke="#f8fafc"/>
+                    <rect x="105" y="315" width="12" height="180" rx="2"/>
+                    <rect x="363" y="315" width="12" height="180" rx="2"/>
+                    <!-- Alignment Projection -->
+                    <line x1="100" y1="165" x2="100" y2="300" stroke="#475569" stroke-dasharray="2,2" stroke-width="1"/>
+                    <line x1="380" y1="165" x2="380" y2="300" stroke="#475569" stroke-dasharray="2,2" stroke-width="1"/>
+                </g>`;
+            } else if (mode === 'comp_microbit') {
+                content += `
+                <text x="300" y="50" fill="#38bdf8" font-size="16" font-weight="bold">DESSIN DE DÉFINITION : CARTE MICRO:BIT V2</text>
+                <g stroke="#38bdf8" stroke-width="2" fill="none">
+                    <!-- Board Body -->
+                    <rect x="250" y="100" width="350" height="250" rx="15" stroke="#f8fafc" fill="#1e293b"/>
+                    <!-- Edge Connector -->
+                    <rect x="250" y="310" width="350" height="40" fill="#eab308" stroke="#fef08a"/>
+                    <!-- Ring Holes -->
+                    <circle cx="280" cy="330" r="10" fill="#0f172a" stroke="#eab308"/>
+                    <circle cx="340" cy="330" r="10" fill="#0f172a" stroke="#eab308"/>
+                    <circle cx="420" cy="330" r="10" fill="#0f172a" stroke="#eab308"/>
+                    <circle cx="510" cy="330" r="10" fill="#0f172a" stroke="#eab308"/>
+                    <circle cx="570" cy="330" r="10" fill="#0f172a" stroke="#eab308"/>
+                    <text x="276" y="334" fill="#eab308" font-size="10" stroke="none">0</text>
+                    <text x="336" y="334" fill="#eab308" font-size="10" stroke="none">1</text>
+                    <text x="416" y="334" fill="#eab308" font-size="10" stroke="none">2</text>
+                    <text x="502" y="334" fill="#eab308" font-size="10" stroke="none">3V</text>
+                    <text x="562" y="334" fill="#eab308" font-size="10" stroke="none">GND</text>
+
+                    <!-- Dimensions Callouts -->
+                    <line x1="250" y1="80" x2="600" y2="80" stroke="#f43f5e" stroke-width="1"/>
+                    <text x="400" y="75" fill="#f43f5e" font-size="12" stroke="none" text-anchor="middle">52 mm</text>
+                    <line x1="220" y1="100" x2="220" y2="350" stroke="#f43f5e" stroke-width="1"/>
+                    <text x="200" y="230" fill="#f43f5e" font-size="12" stroke="none" text-anchor="middle">42 mm</text>
+                </g>`;
+            } else {
+                // Generic detailed SVG view for other components
+                content += `
+                <text x="250" y="60" fill="#38bdf8" font-size="16" font-weight="bold">DESSIN DE DÉFINITION : ${mode.toUpperCase().replace('COMP_', '')}</text>
+                <rect x="200" y="100" width="450" height="260" rx="10" stroke="#38bdf8" stroke-width="2" fill="#1e293b"/>
+                <circle cx="425" cy="230" r="60" stroke="#10b981" stroke-width="3" fill="none"/>
+                <text x="425" y="235" fill="#f8fafc" font-size="14" text-anchor="middle" stroke="none">Cotes & Géométrie Normalisée ISO</text>
+                `;
+            }
+
+            // STANDARDIZED EUROPEAN TITLE BLOCK (CARTOUCHE NF EN ISO 7200)
+            content += `
+            <g transform="translate(480, 410)" stroke="#f8fafc" stroke-width="1.5" fill="none">
+                <!-- Outer Frame -->
+                <rect x="0" y="0" width="400" height="120" fill="#0f172a"/>
+                <line x1="0" y1="30" x2="400" y2="30"/>
+                <line x1="0" y1="60" x2="400" y2="60"/>
+                <line x1="0" y1="90" x2="400" y2="90"/>
+                <line x1="240" y1="0" x2="240" y2="120"/>
+
+                <!-- Projection Symbol European Cone -->
+                <g transform="translate(15, 5)" stroke="#38bdf8" stroke-width="1">
+                    <polygon points="5,15 20,10 20,25 5,20" fill="none"/>
+                    <circle cx="35" cy="17" r="7" fill="none"/>
+                    <line x1="0" y1="17" x2="45" y2="17" stroke-dasharray="2,2"/>
+                </g>
+
+                <!-- Titles & Metadata -->
+                <text x="70" y="20" fill="#f8fafc" font-size="11" font-weight="bold" stroke="none">TechnoLOY Guadeloupe — Cycle 4</text>
+                <text x="10" y="50" fill="#eab308" font-size="10" font-weight="bold" stroke="none">TITRE: LUNETTES CONNECTEES IA</text>
+                <text x="10" y="80" fill="#38bdf8" font-size="10" stroke="none">ECHELLE: 1:1 | FORMAT: A4</text>
+                <text x="10" y="110" fill="#94a3b8" font-size="10" stroke="none">NORME: ISO E (Projection Européenne)</text>
+
+                <!-- Student Info Section -->
+                <text x="250" y="20" fill="#38bdf8" font-size="10" font-weight="bold" stroke="none">ÉLÈVE / DESSINATEUR :</text>
+                <text x="250" y="45" fill="#ffffff" font-size="11" font-weight="bold" stroke="none">${(info.prenom || 'ÉLÈVE').toUpperCase()} ${(info.nom || '').toUpperCase()}</text>
+                <text x="250" y="75" fill="#f59e0b" font-size="10" stroke="none">CLASSE: ${info.niveau || '3e'} (${info.classe || '---'})</text>
+                <text x="250" y="105" fill="#94a3b8" font-size="10" stroke="none">DATE: ${info.date || ''}</text>
+            </g>`;
+
+            svg.innerHTML = content;
+        }
+
+        // -------------------------------------------------------------
+        // MODULE 2 : LABO ÉLECTRONIQUE, BLOCS & CYTOSCAPE LOGIGRAMME
+        // -------------------------------------------------------------
+        let cyLogigramme = null;
+
+        // Initialisation du banc de câblage électronique et des blocs
+        function initWiringBench() {
+            renderBenchControls();
+            renderWiringBenchSVG();
+            renderMBlockCode();
+            renderPythonCode();
+        }
+
+        function changeLabScenario(scenario) {
+            STATE.labScenario = scenario;
+            renderBenchControls();
+            renderWiringBenchSVG();
+            renderMBlockCode();
+            renderPythonCode();
+            updateLogigrammeHighlight();
+        }
+
+        function renderBenchControls() {
+            const container = document.getElementById('benchInteractiveControls');
+            if (STATE.labScenario === '5e') {
+                container.innerHTML = `
+                <div>
+                    <label class="block font-bold mb-1 text-amber-300">Luminosité Ambiante : <span id="valLux" class="font-mono text-white">${STATE.luxValue} lux</span></label>
+                    <input type="range" min="0" max="100" value="${STATE.luxValue}" oninput="updateLux(this.value)" class="w-full accent-amber-500">
+                </div>
+                <div>
+                    <label class="block font-bold mb-1 text-slate-300">Seuil de Déclenchement : <span id="valLuxThresh" class="font-mono text-amber-400">${STATE.luxThreshold} lux</span></label>
+                    <input type="range" min="10" max="90" value="${STATE.luxThreshold}" oninput="updateLuxThresh(this.value)" class="w-full accent-brand-500">
+                </div>
+                <div class="flex items-center justify-end gap-2">
+                    <button onclick="updateLux(20)" class="px-2.5 py-1.5 bg-slate-700 rounded hover:bg-slate-600 font-semibold text-amber-300">Test Obscurité (20 lux)</button>
+                    <button onclick="updateLux(80)" class="px-2.5 py-1.5 bg-slate-700 rounded hover:bg-slate-600 font-semibold text-emerald-300">Test Jour (80 lux)</button>
+                </div>`;
+            } else if (STATE.labScenario === '4e') {
+                container.innerHTML = `
+                <div>
+                    <label class="block font-bold mb-1 text-sky-300">Distance Obstacle : <span id="valDist" class="font-mono text-white">${STATE.distValue} cm</span></label>
+                    <input type="range" min="5" max="50" value="${STATE.distValue}" oninput="updateDist(this.value)" class="w-full accent-sky-500">
+                </div>
+                <div>
+                    <label class="block font-bold mb-1 text-slate-300">Seuil Alerte Sécurité : <span id="valDistThresh" class="font-mono text-sky-400">${STATE.distThreshold} cm</span></label>
+                    <input type="range" min="10" max="40" value="${STATE.distThreshold}" oninput="updateDistThresh(this.value)" class="w-full accent-brand-500">
+                </div>
+                <div class="flex items-center justify-end gap-2">
+                    <button onclick="updateDist(12)" class="px-2.5 py-1.5 bg-rose-950 text-rose-300 border border-rose-700 rounded font-semibold">Danger (12 cm)</button>
+                    <button onclick="updateDist(35)" class="px-2.5 py-1.5 bg-emerald-950 text-emerald-300 border border-emerald-700 rounded font-semibold">Sécurisé (35 cm)</button>
+                </div>`;
+            } else { // 3e IHM
+                container.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <button onclick="pressBtnA()" class="px-4 py-2 bg-amber-600 text-white rounded-lg font-bold shadow hover:bg-amber-700">Appuyer Bouton A (FABRICATION)</button>
+                    <button onclick="pressBtnB()" class="px-4 py-2 bg-amber-600 text-white rounded-lg font-bold shadow hover:bg-amber-700">Appuyer Bouton B (RÉPARATION)</button>
+                </div>
+                <div class="col-span-2 flex items-center justify-between bg-slate-900 p-2.5 rounded border border-slate-700">
+                    <span class="text-slate-400">État Actuel IHM / Mode :</span>
+                    <span id="ihmStateText" class="font-mono font-bold text-emerald-400 text-sm">MODE: VEILLE / RAS</span>
+                </div>`;
+            }
+        }
+
+        function updateLux(v) { STATE.luxValue = parseInt(v); document.getElementById('valLux').innerText = v + ' lux'; renderWiringBenchSVG(); updateLogigrammeHighlight(); }
+        function updateLuxThresh(v) { STATE.luxThreshold = parseInt(v); document.getElementById('valLuxThresh').innerText = v + ' lux'; updateLogigrammeHighlight(); }
+        function updateDist(v) { STATE.distValue = parseInt(v); document.getElementById('valDist').innerText = v + ' cm'; renderWiringBenchSVG(); updateLogigrammeHighlight(); }
+        function updateDistThresh(v) { STATE.distThreshold = parseInt(v); document.getElementById('valDistThresh').innerText = v + ' cm'; updateLogigrammeHighlight(); }
+        
+        function pressBtnA() {
+            STATE.btnAPressed = true; STATE.btnBPressed = false;
+            document.getElementById('ihmStateText').innerText = "MODE: FABRICATION (Envoi MQTT)";
+            renderWiringBenchSVG(); updateLogigrammeHighlight();
+            playBuzzerTone(1500, 100);
+        }
+        function pressBtnB() {
+            STATE.btnBPressed = true; STATE.btnAPressed = false;
+            document.getElementById('ihmStateText').innerText = "MODE: RÉPARATION (Envoi MQTT)";
+            renderWiringBenchSVG(); updateLogigrammeHighlight();
+            playBuzzerTone(1800, 100);
+        }
+
+        function toggleBuzzerWireFault() {
+            STATE.buzzerFault = !STATE.buzzerFault;
+            renderWiringBenchSVG();
+            updateLogigrammeHighlight();
+        }
+
+        function resetWiringBench() {
+            STATE.buzzerFault = false;
+            STATE.luxValue = 40;
+            STATE.distValue = 15;
+            renderBenchControls();
+            renderWiringBenchSVG();
+            updateLogigrammeHighlight();
+        }
+
+        function renderWiringBenchSVG() {
+            const svg = document.getElementById('svgWiringBench');
+            let isAlert = false;
+            if (STATE.labScenario === '5e') isAlert = (STATE.luxValue < STATE.luxThreshold);
+            else if (STATE.labScenario === '4e') isAlert = (STATE.distValue < STATE.distThreshold);
+            else isAlert = STATE.btnAPressed || STATE.btnBPressed;
+
+            if (isAlert && !STATE.buzzerFault) {
+                playBuzzerTone(2000, 100);
+            }
+
+            const activeSignalColor = isAlert ? '#f43f5e' : '#10b981';
+
+            svg.innerHTML = `
+            <rect width="900" height="400" fill="#0f172a" rx="12"/>
+            
+            <!-- Main Controller Card SVG Representation -->
+            <g transform="translate(100, 80)">
+                <rect width="240" height="220" rx="12" fill="#1e293b" stroke="#38bdf8" stroke-width="2"/>
+                <text x="120" y="30" fill="#ffffff" font-size="14" font-weight="bold" text-anchor="middle">CARTE MICROCONTRÔLEUR</text>
+                <text x="120" y="50" fill="#eab308" font-size="11" text-anchor="middle">${STATE.labScenario === '4e' ? 'ESP32-C3 SuperMini' : 'micro:bit V2 + Shield Grove'}</text>
+                
+                <!-- Ports JST Grove -->
+                <rect x="210" y="70" width="30" height="25" fill="#f8fafc" rx="3"/>
+                <text x="195" y="87" fill="#94a3b8" font-size="9">P0</text>
+                <rect x="210" y="120" width="30" height="25" fill="#f8fafc" rx="3"/>
+                <text x="195" y="137" fill="#94a3b8" font-size="9">P1</text>
+                <rect x="210" y="170" width="30" height="25" fill="#f8fafc" rx="3"/>
+                <text x="195" y="187" fill="#94a3b8" font-size="9">P2</text>
+            </g>
+
+            <!-- Sensor Module SVG -->
+            <g transform="translate(550, 60)">
+                <rect width="200" height="100" rx="10" fill="#1e293b" stroke="#eab308" stroke-width="2"/>
+                <text x="100" y="25" fill="#eab308" font-size="12" font-weight="bold" text-anchor="middle">
+                    ${STATE.labScenario === '5e' ? 'Capteur Luminosité' : 'Capteur Ultrason HC-SR04'}
+                </text>
+                <circle cx="60" cy="60" r="20" fill="#0f172a" stroke="#eab308"/>
+                <circle cx="140" cy="60" r="20" fill="#0f172a" stroke="#eab308"/>
+            </g>
+
+            <!-- Buzzer Module SVG -->
+            <g transform="translate(550, 220)" class="cursor-pointer" onclick="toggleBuzzerWireFault()">
+                <rect width="200" height="110" rx="10" fill="#1e293b" stroke="${STATE.buzzerFault ? '#f43f5e' : '#10b981'}" stroke-width="2"/>
+                <text x="100" y="25" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle">Avertisseur Buzzer Piézo</text>
+                <circle cx="100" cy="65" r="25" fill="#0f172a" stroke="#ffffff" stroke-width="2"/>
+                <circle cx="100" cy="65" r="8" fill="#eab308"/>
+                ${STATE.buzzerFault ? '<text x="100" y="102" fill="#f43f5e" font-size="10" font-weight="bold" text-anchor="middle">PANNE: CÂBLE DÉBRANCHÉ</text>' : ''}
+            </g>
+
+            <!-- Wire Harness 4 Wires (Red 5V, Black GND, White NC, Yellow SIG) -->
+            <!-- Sensor Wires -->
+            <path d="M 340 92 C 440 92, 450 110, 550 110" stroke="#f43f5e" stroke-width="3" fill="none"/>
+            <path d="M 340 95 C 440 95, 450 113, 550 113" stroke="#000000" stroke-width="3" fill="none"/>
+            <path d="M 340 98 C 440 98, 450 116, 550 116" stroke="#eab308" stroke-width="3" fill="none"/>
+
+            <!-- Buzzer Wires -->
+            <path d="M 340 142 C 440 142, 450 275, ${STATE.buzzerFault ? '500' : '550'} 275" stroke="#f43f5e" stroke-width="3" fill="none"/>
+            <path d="M 340 145 C 440 145, 450 278, ${STATE.buzzerFault ? '495' : '550'} 278" stroke="#000000" stroke-width="3" fill="none"/>
+            <path d="M 340 148 C 440 148, 450 281, ${STATE.buzzerFault ? '490' : '550'} 281" stroke="${activeSignalColor}" stroke-width="3" stroke-dasharray="${isAlert ? '6,4' : 'none'}" fill="none"/>
+            `;
+        }
+
+        // MBlock & MicroPython Generators
+        function renderMBlockCode() {
+            const container = document.getElementById('mblockContainer');
+            if (STATE.labScenario === '5e') {
+                container.innerHTML = `
+                <div class="p-2 bg-amber-500 text-white font-bold rounded">quand le drapeau vert est cliqué</div>
+                <div class="p-2 bg-blue-600 text-white font-bold rounded ml-4">répéter indéfiniment</div>
+                <div class="p-2 bg-emerald-600 text-white font-bold rounded ml-8">lire la luminosité sur la broche P0</div>
+                <div class="p-2 bg-amber-600 text-white font-bold rounded ml-8">si &lt; luminosité &lt; ${STATE.luxThreshold} &gt; alors</div>
+                <div class="p-2 bg-rose-600 text-white font-bold rounded ml-12">allumer la LED blanche P1</div>
+                <div class="p-2 bg-purple-600 text-white font-bold rounded ml-12">jouer note Do4 sur Buzzer P2</div>
+                <div class="p-2 bg-amber-600 text-white font-bold rounded ml-8">sinon</div>
+                <div class="p-2 bg-rose-800 text-white font-bold rounded ml-12">éteindre la LED P1</div>
+                <div class="p-2 bg-purple-800 text-white font-bold rounded ml-12">arrêter le son</div>`;
+            } else if (STATE.labScenario === '4e') {
+                container.innerHTML = `
+                <div class="p-2 bg-amber-500 text-white font-bold rounded">au démarrage de la carte ESP32</div>
+                <div class="p-2 bg-blue-600 text-white font-bold rounded ml-4">répéter indéfiniment</div>
+                <div class="p-2 bg-emerald-600 text-white font-bold rounded ml-8">mesurer distance ultrason HC-SR04 (cm)</div>
+                <div class="p-2 bg-sky-600 text-white font-bold rounded ml-8">afficher sur OLED : "Distance: " + distance</div>
+                <div class="p-2 bg-amber-600 text-white font-bold rounded ml-8">si &lt; distance &lt; ${STATE.distThreshold} &gt; alors</div>
+                <div class="p-2 bg-rose-600 text-white font-bold rounded ml-12">afficher écran OLED : "ALERTE OBSTACLE"</div>
+                <div class="p-2 bg-purple-600 text-white font-bold rounded ml-12">activer Buzzer d'urgence</div>`;
+            } else {
+                container.innerHTML = `
+                <div class="p-2 bg-amber-500 text-white font-bold rounded">au démarrage micro:bit</div>
+                <div class="p-2 bg-blue-600 text-white font-bold rounded ml-4">si le bouton A est pressé alors</div>
+                <div class="p-2 bg-emerald-600 text-white font-bold rounded ml-8">envoyer MQTT Topic "atelier/mode" = "FABRICATION"</div>
+                <div class="p-2 bg-blue-600 text-white font-bold rounded ml-4">si le bouton B est pressé alors</div>
+                <div class="p-2 bg-emerald-600 text-white font-bold rounded ml-8">envoyer MQTT Topic "atelier/mode" = "REPARATION"</div>`;
+            }
+        }
+
+        function togglePythonSection() {
+            const container = document.getElementById('pythonCodeContainer');
+            const btn = document.getElementById('btnTogglePy');
+            container.classList.toggle('hidden');
+            if (!container.classList.contains('hidden')) {
+                btn.innerHTML = `Masquer le code <i class="fa-solid fa-chevron-up ml-1"></i>`;
+            } else {
+                btn.innerHTML = `Déplier le code <i class="fa-solid fa-chevron-down ml-1"></i>`;
+            }
+        }
+
+        function renderPythonCode() {
+            const pyText = document.getElementById('pythonCodeText');
+            pyText.innerText = `# MicroPython - Kit Lunettes Connectées TechnoLOY
+from microbit import *
+import music
+
+SEUIL_LUX = ${STATE.luxThreshold}
+
+while True:
+    valeur_lux = pin0.read_analog()
+    if valeur_lux < SEUIL_LUX:
+        pin1.write_digital(1) # LED On
+        music.pitch(2000, 100) # Buzzer Tone
+        display.show(Image.SKULL)
+    else:
+        pin1.write_digital(0) # LED Off
+        display.show(Image.HAPPY)
+    sleep(100)`;
+        }
+
+        // CYTOSCAPE.JS LOGIGRAMME INITIALIZATION
+        function initCytoscapeLogigramme() {
+            const container = document.getElementById('cyLogigrammeContainer');
+            if (!container) return;
+
+            cyLogigramme = cytoscape({
+                container: container,
+                style: [
+                    {
+                        selector: 'node',
+                        style: {
+                            'label': 'data(label)',
+                            'text-valign': 'center',
+                            'text-halign': 'center',
+                            'font-size': '11px',
+                            'font-weight': 'bold',
+                            'color': '#0f172a',
+                            'width': '140px',
+                            'height': '45px',
+                            'border-width': 2,
+                            'border-color': '#475569',
+                            'background-color': '#ffffff'
+                        }
+                    },
+                    {
+                        selector: 'node[shape="ellipse"]',
+                        style: { 'shape': 'ellipse', 'background-color': '#dbeafe', 'border-color': '#2563eb' }
+                    },
+                    {
+                        selector: 'node[shape="rhombus"]',
+                        style: { 'shape': 'diamond', 'width': '160px', 'height': '60px', 'background-color': '#fef3c7', 'border-color': '#d97706' }
+                    },
+                    {
+                        selector: 'node[shape="parallelogram"]',
+                        style: { 'shape': 'rhomboid', 'background-color': '#d1fae5', 'border-color': '#059669' }
+                    },
+                    {
+                        selector: 'edge',
+                        style: {
+                            'width': 3,
+                            'line-color': '#94a3b8',
+                            'target-arrow-color': '#94a3b8',
+                            'target-arrow-shape': 'triangle',
+                            'curve-style': 'bezier',
+                            'label': 'data(label)',
+                            'font-size': '10px',
+                            'color': '#475569',
+                            'font-weight': 'bold'
+                        }
+                    },
+                    {
+                        selector: '.active-node',
+                        style: {
+                            'background-color': '#10b981',
+                            'color': '#ffffff',
+                            'border-color': '#047857',
+                            'border-width': 4
+                        }
+                    },
+                    {
+                        selector: '.active-edge',
+                        style: {
+                            'line-color': '#10b981',
+                            'target-arrow-color': '#10b981',
+                            'width': 5
+                        }
+                    }
+                ],
+                elements: [
+                    { data: { id: 'start', label: 'DÉBUT', shape: 'ellipse' }, position: { x: 300, y: 50 } },
+                    { data: { id: 'read', label: 'Lire Capteur (Lux/Dist)', shape: 'parallelogram' }, position: { x: 300, y: 130 } },
+                    { data: { id: 'test', label: 'Valeur < Seuil ?', shape: 'rhombus' }, position: { x: 300, y: 230 } },
+                    { data: { id: 'act_true', label: 'Activer LED + Buzzer', shape: 'rectangle' }, position: { x: 140, y: 340 } },
+                    { data: { id: 'act_false', label: 'Éteindre Alerte / RAS', shape: 'rectangle' }, position: { x: 460, y: 340 } },
+                    { data: { id: 'fault', label: 'Alerte Panne Buzzer', shape: 'rectangle' }, position: { x: 140, y: 420 } },
+                    
+                    { data: { source: 'start', target: 'read' } },
+                    { data: { source: 'read', target: 'test' } },
+                    { data: { source: 'test', target: 'act_true', label: 'VRAI' } },
+                    { data: { source: 'test', target: 'act_false', label: 'FAUX' } },
+                    { data: { source: 'act_true', target: 'fault', label: 'Si Câble Coupé' } }
+                ],
+                layout: { name: 'preset' },
+                userZoomingEnabled: false,
+                userPanningEnabled: false
+            });
+
+            updateLogigrammeHighlight();
+        }
+
+        function updateLogigrammeHighlight() {
+            if (!cyLogigramme) return;
+
+            cyLogigramme.elements().removeClass('active-node active-edge');
+
+            let isConditionMet = false;
+            if (STATE.labScenario === '5e') isConditionMet = (STATE.luxValue < STATE.luxThreshold);
+            else if (STATE.labScenario === '4e') isConditionMet = (STATE.distValue < STATE.distThreshold);
+            else isConditionMet = STATE.btnAPressed || STATE.btnBPressed;
+
+            cyLogigramme.$('#start').addClass('active-node');
+            cyLogigramme.$('#read').addClass('active-node');
+            cyLogigramme.$('#test').addClass('active-node');
+
+            if (isConditionMet) {
+                cyLogigramme.$('#act_true').addClass('active-node');
+                if (STATE.buzzerFault) {
+                    cyLogigramme.$('#fault').addClass('active-node');
+                }
+            } else {
+                cyLogigramme.$('#act_false').addClass('active-node');
+            }
+        }
+
+        // -------------------------------------------------------------
+        // MODULE 3 : CYTOSCAPE NETWORK TOPOLOGY & TERMINAL SIMULATOR
+        // -------------------------------------------------------------
+        let cyNetwork = null;
+
+        function updateNetworkArchitecture() {
+            STATE.netArch = document.getElementById('netArchSelect').value;
+            STATE.brokerIp = (STATE.netArch === 'ap') ? '10.42.0.1' : '192.168.1.50';
+            document.getElementById('activeBrokerBadge').innerText = `BROKER: ${STATE.brokerIp}:1883`;
+            document.getElementById('terminalPrompt').innerText = `pi@raspberrypi(${STATE.brokerIp}):~ $`;
+            initCytoscapeNetwork();
+        }
+
+        function updateTopicConvention() {
+            STATE.topicConvention = document.getElementById('topicConventionSelect').value;
+            printTerminalLog(`[CONFIG] Convention des topics modifiée : ${STATE.topicConvention === 'v21' ? 'atelier/poste1/*' : 'atelier/lunettes/*'}`);
+        }
+
+        function initCytoscapeNetwork() {
+            const container = document.getElementById('cyNetworkContainer');
+            if (!container) return;
+
+            const bIp = STATE.brokerIp;
+
+            cyNetwork = cytoscape({
+                container: container,
+                style: [
+                    {
+                        selector: 'node',
+                        style: {
+                            'label': 'data(label)',
+                            'text-valign': 'bottom',
+                            'text-margin-y': 6,
+                            'font-size': '11px',
+                            'font-weight': 'bold',
+                            'color': '#0f172a',
+                            'width': '50px',
+                            'height': '50px',
+                            'background-color': '#38bdf8',
+                            'border-width': 3,
+                            'border-color': '#0284c7'
+                        }
+                    },
+                    {
+                        selector: 'node[role="broker"]',
+                        style: { 'background-color': '#10b981', 'border-color': '#047857', 'width': '65px', 'height': '65px' }
+                    },
+                    {
+                        selector: 'node[role="nowifi"]',
+                        style: { 'background-color': '#f59e0b', 'border-color': '#b45309' }
+                    },
+                    {
+                        selector: 'edge',
+                        style: {
+                            'width': 2,
+                            'line-color': '#cbd5e1',
+                            'curve-style': 'bezier',
+                            'target-arrow-shape': 'triangle',
+                            'target-arrow-color': '#cbd5e1'
+                        }
+                    },
+                    {
+                        selector: '.pulse-edge',
+                        style: { 'line-color': '#f43f5e', 'target-arrow-color': '#f43f5e', 'width': 4 }
+                    }
+                ],
+                elements: [
+                    { data: { id: 'broker', label: `RPi 400 Broker\n(${bIp})`, role: 'broker' }, position: { x: 400, y: 180 } },
+                    { data: { id: 'pc_prof', label: 'PC Enseignant (PuTTY)', role: 'client' }, position: { x: 150, y: 80 } },
+                    { data: { id: 'esp32c3', label: 'ESP32-C3 Lunettes', role: 'client' }, position: { x: 650, y: 80 } },
+                    { data: { id: 'esp32cam', label: 'ESP32-CAM Stream', role: 'client' }, position: { x: 650, y: 280 } },
+                    { data: { id: 'pico', label: 'Pico W Capteur', role: 'client' }, position: { x: 400, y: 340 } },
+                    { data: { id: 'microbit', label: 'micro:bit V2\n(Sans Wi-Fi IP Natif)', role: 'nowifi' }, position: { x: 150, y: 280 } },
+
+                    { data: { source: 'pc_prof', target: 'broker' } },
+                    { data: { source: 'esp32c3', target: 'broker' } },
+                    { data: { source: 'esp32cam', target: 'broker' } },
+                    { data: { source: 'pico', target: 'broker' } },
+                    { data: { source: 'microbit', target: 'pc_prof' } }
+                ],
+                layout: { name: 'preset' },
+                userZoomingEnabled: false
+            });
+
+            // Node Click Event Notification
+            cyNetwork.on('tap', 'node', function(evt){
+                const node = evt.target;
+                const d = node.data();
+                const infoMsg = `INFO NŒUD RÉSEAU\nÉquipement : ${d.label.replace(/\n/g, ' ')}\nRôle : ${d.role.toUpperCase()}\nProtocoles : MQTT (1883), HTTP (80), SSH (22)`;
+                showToast(infoMsg, false);
+                printTerminalLog(`[NODE INFO] ${d.label.replace(/\n/g, ' ')} (${d.role.toUpperCase()})`, 'text-sky-300');
+            });
+        }
+
+        // Terminal Simulator Functions
+        function printTerminalLog(msg, colorClass = 'text-emerald-400') {
+            const out = document.getElementById('terminalOutput');
+            const time = new Date().toLocaleTimeString();
+            const div = document.createElement('div');
+            div.className = colorClass;
+            div.innerText = `[${time}] ${msg}`;
+            out.appendChild(div);
+            out.scrollTop = out.scrollHeight;
+        }
+
+        function clearTerminal() {
+            document.getElementById('terminalOutput').innerHTML = '';
+        }
+
+        function execQuickCmd(type) {
+            const topicBase = (STATE.topicConvention === 'v21') ? 'atelier/poste1' : 'atelier/lunettes';
+            if (type === 'sub') {
+                const cmd = `mosquitto_sub -h ${STATE.brokerIp} -t "${topicBase}/#" -v`;
+                printTerminalLog(`$ ${cmd}`, 'text-amber-300 font-bold');
+                printTerminalLog(`[SUBSCRIBE OK] Écoute active sur le broker ${STATE.brokerIp}...`);
+            } else if (type === 'pub_danger') {
+                const cmd = `mosquitto_pub -h ${STATE.brokerIp} -t "${topicBase}/distance" -m "15"`;
+                printTerminalLog(`$ ${cmd}`, 'text-rose-400 font-bold');
+                printTerminalLog(`[MQTT PUB] Topic: ${topicBase}/distance -> Payload: 15`);
+                printTerminalLog(`[SCRIPT IA T14] EVALUATION : Distance 15 cm < Seuil 20 cm => DECISION : ALERTE DANGER DÉCLENCHÉE`, 'text-rose-400');
+                animateNetworkPacket('esp32c3');
+            } else if (type === 'pub_ok') {
+                const cmd = `mosquitto_pub -h ${STATE.brokerIp} -t "${topicBase}/distance" -m "35"`;
+                printTerminalLog(`$ ${cmd}`, 'text-emerald-300 font-bold');
+                printTerminalLog(`[MQTT PUB] Topic: ${topicBase}/distance -> Payload: 35`);
+                printTerminalLog(`[SCRIPT IA T14] EVALUATION : Distance 35 cm >= Seuil 20 cm => DECISION : STATUT RAS`, 'text-emerald-300');
+                animateNetworkPacket('esp32c3');
+            } else if (type === 'pub_mode') {
+                const cmd = `mosquitto_pub -h ${STATE.brokerIp} -t "${topicBase}/mode" -m "FABRICATION"`;
+                printTerminalLog(`$ ${cmd}`, 'text-brand-300 font-bold');
+                printTerminalLog(`[MQTT PUB] Topic: ${topicBase}/mode -> Payload: FABRICATION`);
+                animateNetworkPacket('pc_prof');
+            }
+        }
+
+        function handleTerminalSubmit(e) {
+            e.preventDefault();
+            const input = document.getElementById('terminalInput');
+            const val = input.value.trim();
+            if (!val) return;
+
+            printTerminalLog(`$ ${val}`, 'text-white font-bold');
+            if (val.includes('mosquitto_sub')) {
+                printTerminalLog(`[SUBSCRIBE] Connexion établie avec ${STATE.brokerIp}`);
+            } else if (val.includes('mosquitto_pub')) {
+                printTerminalLog(`[PUBLISH OK] Paquet MQTT délivré avec succès (QoS 0)`);
+                animateNetworkPacket('pc_prof');
+            } else {
+                printTerminalLog(`[CMD OK] Commande exécutée.`);
+            }
+            input.value = '';
+        }
+
+        function animateNetworkPacket(sourceId) {
+            if (!cyNetwork) return;
+            const edges = cyNetwork.$(`edge[source="${sourceId}"]`);
+            edges.addClass('pulse-edge');
+            setTimeout(() => edges.removeClass('pulse-edge'), 1000);
+        }
+
+        // Protocol Test Matrix Tool Logic
+        function initProtocolTable() {
+            STATE.protocolRows = [
+                { id: 1, dist: 12, exp: 'ALERTE', obs: 'ALERTE', delay: 0.12, pass: true, note: 'Détection rapide' },
+                { id: 2, dist: 35, exp: 'RAS', obs: 'RAS', delay: 0.10, pass: true, note: 'Aucun faux positif' },
+                { id: 3, dist: 18, exp: 'ALERTE', obs: 'ALERTE', delay: 0.15, pass: true, note: 'Seuil respecté' }
+            ];
+            renderProtocolTable();
+        }
+
+        function addProtocolRow() {
+            const newId = STATE.protocolRows.length + 1;
+            STATE.protocolRows.push({
+                id: newId, dist: 25, exp: 'RAS', obs: 'RAS', delay: 0.14, pass: true, note: 'Essai manuel'
+            });
+            renderProtocolTable();
+        }
+
+        function renderProtocolTable() {
+            const tbody = document.querySelector('#protocolTable tbody');
+            tbody.innerHTML = '';
+            
+            let totalDelay = 0;
+            let passCount = 0;
+
+            STATE.protocolRows.forEach((row, idx) => {
+                totalDelay += row.delay;
+                if (row.pass) passCount++;
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50";
+                tr.innerHTML = `
+                    <td class="p-2 font-bold">${row.id}</td>
+                    <td class="p-2"><input type="number" value="${row.dist}" onchange="updateRowData(${idx}, 'dist', this.value)" class="w-16 bg-slate-100 border border-slate-300 rounded px-1 text-center font-mono"></td>
+                    <td class="p-2 font-bold">${row.exp}</td>
+                    <td class="p-2 font-bold text-brand-600">${row.obs}</td>
+                    <td class="p-2"><input type="number" step="0.01" value="${row.delay}" onchange="updateRowData(${idx}, 'delay', this.value)" class="w-20 bg-slate-100 border border-slate-300 rounded px-1 text-center font-mono"></td>
+                    <td class="p-2">${row.pass ? '<span class="text-emerald-600 font-bold"><i class="fa-solid fa-circle-check"></i> OUI</span>' : '<span class="text-rose-600 font-bold"><i class="fa-solid fa-circle-xmark"></i> NON</span>'}</td>
+                    <td class="p-2"><input type="text" value="${row.note}" onchange="updateRowData(${idx}, 'note', this.value)" class="w-full bg-slate-100 border border-slate-300 rounded px-2"></td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // Update stats
+            const count = STATE.protocolRows.length;
+            document.getElementById('statCount').innerText = `${count} / 5`;
+            document.getElementById('statAvgDelay').innerText = (count > 0 ? (totalDelay / count).toFixed(2) : 0) + ' s';
+            document.getElementById('statSuccessRate').innerText = (count > 0 ? Math.round((passCount / count) * 100) : 100) + ' %';
+        }
+
+        function updateRowData(idx, key, val) {
+            if (key === 'dist' || key === 'delay') val = parseFloat(val);
+            STATE.protocolRows[idx][key] = val;
+            renderProtocolTable();
+        }
+
+        // -------------------------------------------------------------
+        // MODULE 4 : FICHES ÉLÈVES (5E / 4E / 3E) & CORRIGÉS PROF
+        // -------------------------------------------------------------
+        function toggleProfSolutions() {
+            STATE.profMode = !STATE.profMode;
+            const btn = document.getElementById('btnProfMode');
+            if (STATE.profMode) {
+                btn.className = "px-3.5 py-2 rounded-lg bg-amber-500 text-slate-950 text-xs font-extrabold shadow-md";
+                btn.innerHTML = `<i class="fa-solid fa-key"></i> Mode Professeur ACTIF (Corrigés Affichés)`;
+            } else {
+                btn.className = "px-3.5 py-2 rounded-lg bg-amber-50 text-amber-800 border border-amber-300 text-xs font-bold hover:bg-amber-100";
+                btn.innerHTML = `<i class="fa-solid fa-key"></i> Mode Professeur : Afficher Corrigés`;
+            }
+            renderWorksheets();
+        }
+
+        function renderWorksheets() {
+            const container = document.getElementById('worksheetsContainer');
+            const level = STATE.niveau;
+            const prof = STATE.profMode;
+
+            let html = '';
+
+            if (level === '5e') {
+                html = `
+                <!-- 5e Worksheets -->
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-4">
+                    <h3 class="text-sm font-bold text-slate-900 border-b border-slate-200 pb-2 flex items-center gap-2">
+                        <span class="px-2 py-0.5 bg-amber-100 text-amber-800 rounded font-mono text-xs">5e-1</span> Analyse du Besoin & Éclairage de Sécurité
+                    </h3>
+                    <p class="text-xs text-slate-600">Question 1 : Dans l'usine de M. Loyalle, pourquoi l'ouvrier a-t-il besoin d'un éclairage automatique sur ses lunettes ?</p>
+                    <textarea class="w-full bg-slate-50 border border-slate-300 rounded-lg p-3 text-xs focus:ring-2 focus:ring-brand-500 outline-none" rows="3" placeholder="Saisissez votre réponse ici..."></textarea>
+                    ${prof ? '<div class="p-3 bg-amber-50 border border-amber-300 rounded-lg text-xs text-amber-900 font-medium"><strong>Corrigé Prof :</strong> Pour garder les mains libres lors de la manipulation des pièces volantes et garantir une visibilité optimale dès qu\'il pénètre dans une zone sombre (sous le châssis).</div>' : ''}
+                </div>
+
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-4">
+                    <h3 class="text-sm font-bold text-slate-900 border-b border-slate-200 pb-2 flex items-center gap-2">
+                        <span class="px-2 py-0.5 bg-amber-100 text-amber-800 rounded font-mono text-xs">5e-4</span> Diagnostic de Panne : L'avertisseur sonore ne répond plus
+                    </h3>
+                    <p class="text-xs text-slate-600">Observation : La LED s'allume en zone sombre mais le buzzer reste silencieux. Quelle est la démarche de test ?</p>
+                    <textarea class="w-full bg-slate-50 border border-slate-300 rounded-lg p-3 text-xs focus:ring-2 focus:ring-brand-500 outline-none" rows="3" placeholder="Décrivez les vérifications à effectuer..."></textarea>
+                    ${prof ? '<div class="p-3 bg-amber-50 border border-amber-300 rounded-lg text-xs text-amber-900 font-medium"><strong>Corrigé Prof :</strong> 1. Vérifier le câblage du module Grove (connecteur P2 débranché ou mal enfiché). 2. Vérifier la broche affectée dans le programme mBlock. 3. Tester le composant en remplaçant le buzzer.</div>' : ''}
+                </div>`;
+            } else if (level === '4e') {
+                html = `
+                <!-- 4e Worksheets -->
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-4">
+                    <h3 class="text-sm font-bold text-slate-900 border-b border-slate-200 pb-2 flex items-center gap-2">
+                        <span class="px-2 py-0.5 bg-blue-100 text-blue-800 rounded font-mono text-xs">4e-1</span> Chaîne d'Information : Capteur Ultrason & Écran OLED
+                    </h3>
+                    <p class="text-xs text-slate-600">Question : Complétez les blocs de la chaîne d'information (Acquérir -> Traiter -> Communiquer).</p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                        <div class="p-3 bg-slate-50 rounded border border-slate-200">
+                            <strong>Acquérir :</strong> <input type="text" class="w-full mt-1 border rounded p-1 bg-white" placeholder="ex: Capteur ultrason">
+                        </div>
+                        <div class="p-3 bg-slate-50 rounded border border-slate-200">
+                            <strong>Traiter :</strong> <input type="text" class="w-full mt-1 border rounded p-1 bg-white" placeholder="ex: Microcontrôleur ESP32-C3">
+                        </div>
+                        <div class="p-3 bg-slate-50 rounded border border-slate-200">
+                            <strong>Communiquer :</strong> <input type="text" class="w-full mt-1 border rounded p-1 bg-white" placeholder="ex: Écran OLED HUD">
+                        </div>
+                    </div>
+                    ${prof ? '<div class="p-3 bg-amber-50 border border-amber-300 rounded-lg text-xs text-amber-900 font-medium"><strong>Corrigé Prof :</strong> Acquérir = Capteur ultrason HC-SR04 | Traiter = Carte ESP32-C3 / MicroPython | Communiquer = Afficheur OLED 0.96" + Prisme guide d\'onde.</div>' : ''}
+                </div>`;
+            } else { // 3e
+                html = `
+                <!-- 3e Worksheets -->
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-4">
+                    <h3 class="text-sm font-bold text-slate-900 border-b border-slate-200 pb-2 flex items-center gap-2">
+                        <span class="px-2 py-0.5 bg-purple-100 text-purple-800 rounded font-mono text-xs">3e-1</span> Architecture Réseau IHM & Broker MQTT
+                    </h3>
+                    <p class="text-xs text-slate-600">Question : Expliquez le rôle du Broker Mosquitto (10.42.0.1) entre les lunettes de l'ouvrier et le serveur IA central.</p>
+                    <textarea class="w-full bg-slate-50 border border-slate-300 rounded-lg p-3 text-xs focus:ring-2 focus:ring-brand-500 outline-none" rows="3" placeholder="Rôle de pub/sub, centralisation des messages..."></textarea>
+                    ${prof ? '<div class="p-3 bg-amber-50 border border-amber-300 rounded-lg text-xs text-amber-900 font-medium"><strong>Corrigé Prof :</strong> Le Broker MQTT agit comme un serveur central d\'aiguillage. Les lunettes publient les mesures sur un topic (ex: atelier/poste1/distance). Le script IA s\'abonne au topic, évalue le risque et republie l\'ordre d\'alerte. Cela évite d\'avoir une connexion directe complexe entre chaque composant.</div>' : ''}
+                </div>
+
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-4">
+                    <h3 class="text-sm font-bold text-slate-900 border-b border-slate-200 pb-2 flex items-center gap-2">
+                        <span class="px-2 py-0.5 bg-purple-100 text-purple-800 rounded font-mono text-xs">3e-3</span> Analyse des Biais & Faux Positifs de l'IA
+                    </h3>
+                    <p class="text-xs text-slate-600">Question : Différence entre un Faux Positif et un Faux Négatif dans le contexte de la sécurité à l'usine ?</p>
+                    <textarea class="w-full bg-slate-50 border border-slate-300 rounded-lg p-3 text-xs focus:ring-2 focus:ring-brand-500 outline-none" rows="3" placeholder="Saisissez votre analyse..."></textarea>
+                    ${prof ? '<div class="p-3 bg-amber-50 border border-amber-300 rounded-lg text-xs text-amber-900 font-medium"><strong>Corrigé Prof :</strong> Faux Positif = Alerte déclenchée sans qu\'il n\'y ait de vrai danger (gêne le travail). Faux Négatif = Vrai danger non détecté par l\'IA (très grave pour la sécurité de l\'ouvrier).</div>' : ''}
+                </div>`;
+            }
+
+            container.innerHTML = html;
+        }
+
+        // -------------------------------------------------------------
+        // MODULE 6 : GUIDE ENSEIGNANT (FICHES T1 À T15 ACCORDION)
+        // -------------------------------------------------------------
+        const TEACHER_CARDS = [
+            { id: 'T1', title: 'Installation Raspberry Pi OS & Serveur Broker Mosquitto', cmd: 'sudo apt update && sudo apt install -y mosquitto mosquitto-clients\nsudo systemctl enable mosquitto\nsudo systemctl start mosquitto' },
+            { id: 'T2', title: 'Connexion Client PuTTY & SSH', cmd: 'ssh pi@10.42.0.1\n# Mot de passe par défaut configuré lors du flashage Imager' },
+            { id: 'T3bis', title: 'Configuration Point d\'Accès Dédié AP 2.4 GHz (10.42.0.1)', cmd: 'sudo nmcli device wifi hotspot ifname wlan0 ssid ReseauAtelier password "technoloy971"' },
+            { id: 'T5', title: 'Arborescence des Topics MQTT Normalisés v2.1', cmd: '# Subscriptions\nmosquitto_sub -h 10.42.0.1 -t "atelier/poste1/#" -v' },
+            { id: 'T14', title: 'Script Python Central ia_atelier.py (Décision Automatique)', cmd: `import paho.mqtt.client as mqtt
+
+SEUIL_DISTANCE = 20
+
+def on_message(client, userdata, msg):
+    payload = msg.payload.decode()
+    if msg.topic == "atelier/poste1/distance":
+        dist = float(payload)
+        if dist < SEUIL_DISTANCE:
+            client.publish("atelier/poste1/ia", "ALERTE_DANGER")
+        else:
+            client.publish("atelier/poste1/ia", "RAS")
+
+client = mqtt.Client()
+client.connect("10.42.0.1", 1883)
+client.subscribe("atelier/poste1/#")
+client.on_message = on_message
+client.loop_forever()` }
+        ];
+
+        function renderTeacherAccordion() {
+            const container = document.getElementById('teacherCardsAccordion');
+            let html = '';
+            TEACHER_CARDS.forEach(c => {
+                html += `
+                <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                    <button onclick="toggleCard('${c.id}')" class="w-full px-5 py-3.5 text-left font-bold text-slate-900 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-all text-xs sm:text-sm">
+                        <span><span class="px-2 py-0.5 rounded bg-brand-100 text-brand-800 text-xs font-mono mr-2">${c.id}</span> ${c.title}</span>
+                        <i id="icon-${c.id}" class="fa-solid fa-chevron-down text-slate-400"></i>
+                    </button>
+                    <div id="body-${c.id}" class="hidden p-4 space-y-3 bg-slate-900 text-slate-100 font-mono text-xs">
+                        <div class="flex justify-between items-center text-slate-400 text-[11px]">
+                            <span>Bloc de commande / Script :</span>
+                            <button onclick="copyTeacherCard('${c.id}')" class="px-2.5 py-1 rounded bg-slate-800 text-emerald-400 border border-slate-700 hover:bg-slate-700 font-sans font-bold">
+                                <i class="fa-solid fa-copy"></i> Copier
+                            </button>
+                        </div>
+                        <pre class="overflow-x-auto p-3 bg-slate-950 rounded text-emerald-400 border border-slate-800">${c.cmd}</pre>
+                    </div>
+                </div>`;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function copyTeacherCard(cardId) {
+            const card = TEACHER_CARDS.find(c => c.id === cardId);
+            if (card) copyToClipboard(card.cmd);
+        }
+
+        function toggleCard(id) {
+            const body = document.getElementById(`body-${id}`);
+            const icon = document.getElementById(`icon-${id}`);
+            body.classList.toggle('hidden');
+            if (!body.classList.contains('hidden')) {
+                icon.className = "fa-solid fa-chevron-up text-brand-500";
+            } else {
+                icon.className = "fa-solid fa-chevron-down text-slate-400";
+            }
+        }
+
+        function copyToClipboard(text) {
+            const temp = document.createElement('textarea');
+            temp.value = text;
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand('copy');
+            document.body.removeChild(temp);
+            showToast("Code copié dans le presse-papiers !", true);
+        }
+
+        // -------------------------------------------------------------
+        // MODULE 7 : RÉVISION CYCLE 4 (GLOSSAIRE INTERACTIF)
+        // -------------------------------------------------------------
+        const GLOSSARY_ITEMS = [
+            { term: 'OST', def: 'Objet Secondaire Technologique : sous-système connecté au produit principal.' },
+            { term: 'MEI', def: 'Matière, Énergie, Information : les trois flux manipulés par les objets techniques.' },
+            { term: 'IHM', def: 'Interface Homme-Machine : écran OLED, boutons A/B, signaux visuels et sonores.' },
+            { term: 'Microcontrôleur', def: 'Circuit intégré programmable comportant un processeur, de la mémoire et des broches d\'E/S.' },
+            { term: 'Point d\'Accès (AP)', def: 'Routeur Wi-Fi créant un réseau sans fil local (ex: ReseauAtelier 10.42.0.1).' },
+            { term: 'MQTT', def: 'Message Queuing Telemetry Transport : protocole de communication léger pour l\'IoT.' },
+            { term: 'Broker', def: 'Serveur central d\'aiguillage des messages MQTT (ex: Mosquitto sur Raspberry Pi).' },
+            { term: 'Topic', def: 'Sujet ou canal d\'arborescence MQTT sur lequel les messages sont publiés.' },
+            { term: 'Faux Positif', def: 'Alerte sécurité déclenchée par erreur par le système alors qu\'aucun danger n\'existe.' },
+            { term: 'EBEP', def: 'Élèves à Besoins Éducatifs Particuliers : aménagements d\'accessibilité (Dys, TSA).' }
+        ];
+
+        function renderGlossary() {
+            const container = document.getElementById('glossaryGrid');
+            container.innerHTML = '';
+            GLOSSARY_ITEMS.forEach(item => {
+                const div = document.createElement('div');
+                div.className = "p-4 bg-slate-50 rounded-xl border border-slate-200 hover:border-brand-300 space-y-1 transition-all glossary-item";
+                div.innerHTML = `
+                    <div class="font-bold text-slate-900 text-xs text-brand-700">${item.term}</div>
+                    <p class="text-xs text-slate-600 leading-relaxed">${item.def}</p>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function filterGlossary() {
+            const query = document.getElementById('glossarySearch').value.toLowerCase();
+            document.querySelectorAll('.glossary-item').forEach(el => {
+                const text = el.innerText.toLowerCase();
+                el.style.display = text.includes(query) ? 'block' : 'none';
+            });
+        }
+    </script>
+</body>
+</html>

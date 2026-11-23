@@ -1,0 +1,147 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-display: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  --font-sans: "DM Sans", system-ui, -apple-system, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: #f8fafc;
+    color: #0f172a;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  html.dark body {
+    background-color: #020617;
+    color: #f1f5f9;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    text-wrap: balance;
+  }
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.sketchpad-grid {
+  touch-action: none;
+  background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+/* Svelte Flow theming harmonized with light/dark studio palette */
+.svelte-flow {
+  --xy-background-color-default: #f8fafc;
+  --xy-edge-label-background-color-default: #ffffff;
+  --xy-edge-label-color-default: #0f172a;
+}
+
+.svelte-flow.dark {
+  --xy-background-color-default: #020617;
+  --xy-edge-label-background-color-default: #0f172a;
+  --xy-edge-label-color-default: #f1f5f9;
+  --xy-controls-button-background-color-default: #0f172a;
+  --xy-controls-button-background-color-hover-default: #1e293b;
+  --xy-controls-button-color-default: #e2e8f0;
+  --xy-controls-button-border-color-default: #334155;
+}
+
+.svelte-flow__edge-text {
+  font-weight: 600;
+  font-size: 11px;
+}
+
+/* Mode EBEP (Dys / TSA / Surcharge cognitive réduite / Silencieux) */
+body.ebep-mode {
+  font-size: 18px !important;
+  line-height: 1.8 !important;
+  letter-spacing: 0.03em !important;
+  word-spacing: 0.08em !important;
+  background-color: #faf9f5 !important;
+}
+
+html.dark body.ebep-mode {
+  background-color: #0b1120 !important;
+  color: #f8fafc !important;
+}
+
+body.ebep-mode p,
+body.ebep-mode li,
+body.ebep-mode label,
+body.ebep-mode textarea,
+body.ebep-mode input,
+body.ebep-mode select {
+  font-weight: 500 !important;
+  line-height: 1.75 !important;
+}
+
+body.ebep-mode * {
+  animation-duration: 0.01ms !important;
+  transition-duration: 0.01ms !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Impression PDF A4 Stricte */
+@page {
+  size: A4 portrait;
+  margin: 12mm;
+}
+
+.print-only {
+  display: none;
+}
+
+@media print {
+  html,
+  html.dark,
+  body,
+  html.dark body,
+  body.ebep-mode,
+  html.dark body.ebep-mode {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 10.5pt !important;
+    line-height: 1.45 !important;
+    letter-spacing: normal !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  .print-break-inside-avoid {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .print-page-break {
+    break-before: page;
+    page-break-before: always;
+  }
+}

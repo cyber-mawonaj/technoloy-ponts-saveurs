@@ -1,0 +1,1985 @@
+<!DOCTYPE html>
+<html lang="fr" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FDS 2026 - Le Pont des Saveurs et des Cultures | TechnoLOY</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Outfit', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#fffbeb',
+                            100: '#fef3c7',
+                            500: '#f59e0b',
+                            600: '#d97706',
+                            700: '#b45309',
+                            900: '#78350f',
+                        },
+                        kenya: {
+                            green: '#006600',
+                            red: '#BB0000',
+                        },
+                        nigeria: {
+                            green: '#008751',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom styles for interactive widgets and print mode */
+        body {
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
+        .step-active {
+            border-color: #d97706;
+            background-color: #fffbeb;
+            color: #92400e;
+            font-weight: 600;
+        }
+        canvas#sketchpad {
+            touch-action: none;
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 16px 16px;
+        }
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            .print-only {
+                display: block !important;
+            }
+            body {
+                background: white;
+            }
+            .tab-content {
+                display: block !important;
+                page-break-after: always;
+            }
+        }
+        /* Bridge Simulator Animations */
+        .bridge-deck {
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .coin-drop {
+            animation: dropIn 0.3s ease-out forwards;
+        }
+        @keyframes dropIn {
+            0% { transform: translateY(-40px) scale(0.8); opacity: 0; }
+            100% { transform: translateY(0) scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans">
+
+    <!-- Top Notification / Toast Modal (Replaces alert) -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
+
+    <!-- Header & Student Profile Bar -->
+    <header class="bg-slate-900 text-white shadow-lg sticky top-0 z-40 no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <!-- Title & Logo -->
+                <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-md">
+                        <i class="fa-solid fa-bridge-water text-xl text-white"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">Fête de la Science 2026</span>
+                            <span class="text-xs text-slate-400 hidden sm:inline">Cycle 4 • TechnoLOY</span>
+                        </div>
+                        <h1 class="font-display font-bold text-lg sm:text-xl tracking-tight text-white">Le Pont des Saveurs et des Cultures</h1>
+                    </div>
+                </div>
+
+                <!-- Global Activity Timer (45 min) -->
+                <div class="flex items-center gap-3 bg-slate-800/90 border border-slate-700 px-3.5 py-2 rounded-xl">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-regular fa-clock text-amber-400"></i>
+                        <span class="text-xs uppercase tracking-wider text-slate-400 hidden md:inline">Chrono (45m) :</span>
+                        <span id="global-timer" class="font-mono font-bold text-lg text-amber-400">45:00</span>
+                    </div>
+                    <button onclick="toggleGlobalTimer()" id="timer-btn" class="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-slate-950 font-semibold text-xs transition">
+                        <i class="fa-solid fa-play mr-1"></i>Démarrer
+                    </button>
+                    <button onclick="resetGlobalTimer()" class="p-1 text-slate-400 hover:text-white transition" title="Réinitialiser">
+                        <i class="fa-solid fa-rotate-right text-xs"></i>
+                    </button>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex items-center gap-2">
+                    <button onclick="toggleStudentModal()" class="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs sm:text-sm font-medium transition">
+                        <i class="fa-regular fa-id-badge text-amber-400"></i>
+                        <span id="student-badge-name">Identité Élève</span>
+                    </button>
+                    <button onclick="exportReport()" class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-semibold shadow transition">
+                        <i class="fa-solid fa-print"></i>
+                        <span class="hidden sm:inline">Imprimer / Bilan</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Navigation Tabs -->
+        <div class="bg-slate-800/70 border-t border-slate-800">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex overflow-x-auto no-scrollbar">
+                <button onclick="switchMainTab('mission')" id="tab-btn-mission" class="main-tab-btn flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 border-amber-500 text-amber-400 whitespace-nowrap transition">
+                    <i class="fa-solid fa-book-open"></i> 1. Commande & Cahier des charges
+                </button>
+                <button onclick="switchMainTab('atelier')" id="tab-btn-atelier" class="main-tab-btn flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 border-transparent text-slate-300 hover:text-white whitespace-nowrap transition">
+                    <i class="fa-solid fa-compass-drafting"></i> 2. Parcours DIY (7 Étapes)
+                </button>
+                <button onclick="switchMainTab('simulateur')" id="tab-btn-simulateur" class="main-tab-btn flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 border-transparent text-slate-300 hover:text-white whitespace-nowrap transition">
+                    <i class="fa-solid fa-vial-circle-check"></i> 3. Simulateur & Essai Mécanique
+                </button>
+                <button onclick="switchMainTab('evaluations')" id="tab-btn-evaluations" class="main-tab-btn flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 border-transparent text-slate-300 hover:text-white whitespace-nowrap transition">
+                    <i class="fa-solid fa-graduation-cap"></i> 4. Évaluations (5e / 4e / 3e)
+                </button>
+                <button onclick="switchMainTab('bilan')" id="tab-btn-bilan" class="main-tab-btn flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 border-transparent text-slate-300 hover:text-white whitespace-nowrap transition">
+                    <i class="fa-solid fa-award"></i> 5. Bilan & Culture FabLab
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Student Identity Collapsible Banner / Modal -->
+    <div id="student-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 no-print">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+                <h3 class="font-display font-bold text-lg text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-user-graduate text-amber-600"></i> Fiche d'identité Élève / Équipe
+                </h3>
+                <button onclick="toggleStudentModal()" class="text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 my-5">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Nom</label>
+                    <input type="text" id="std-nom" placeholder="Ex: Seÿkou" class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-amber-500 focus:outline-none text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Prénom</label>
+                    <input type="text" id="std-prenom" placeholder="Ex: Kofi" class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-amber-500 focus:outline-none text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Classe / Niveau</label>
+                    <select id="std-classe" onchange="syncEvalLevelFromClass()" class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-amber-500 focus:outline-none text-sm bg-white">
+                        <option value="5e">5ème</option>
+                        <option value="4e">4ème</option>
+                        <option value="3e">3ème</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Groupe & N° d'équipe</label>
+                    <input type="text" id="std-equipe" placeholder="Ex: Grp A - Équipe 3" class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-amber-500 focus:outline-none text-sm">
+                </div>
+            </div>
+            <div class="flex justify-end gap-2">
+                <button onclick="saveStudentInfo()" class="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-semibold text-sm shadow transition">
+                    Enregistrer mes informations
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT CONTAINER -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <!-- ==========================================
+             TAB 1: MISSION & CAHIER DES CHARGES
+             ========================================== -->
+        <section id="tab-mission" class="tab-content space-y-8">
+            <!-- Hero Banner -->
+            <div class="relative rounded-3xl overflow-hidden bg-gradient-to-r from-slate-900 via-amber-950 to-slate-900 text-white shadow-xl border border-amber-500/20">
+                <div class="p-6 sm:p-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                    <div class="lg:col-span-8 space-y-4">
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-400/30 text-amber-300 text-xs font-semibold">
+                            <i class="fa-solid fa-utensils"></i> Thème 2026 : « Saveur savante » • Démarche FabLab & DIY
+                        </div>
+                        <h2 class="font-display font-extrabold text-2xl sm:text-4xl leading-tight">
+                            Situation-Problème : Une commande originale pour Monsieur Loyalle !
+                        </h2>
+                        <p class="text-slate-200 text-sm sm:text-base leading-relaxed">
+                            Le pâtissier <strong>Monsieur Loyalle</strong> a reçu une commande particulière pour célébrer le mariage de 
+                            <span class="text-amber-300 font-semibold">Kofi Seÿkou-Touré</span> (originaire du <strong>Kenya</strong>) et 
+                            <span class="text-emerald-300 font-semibold">Abénah Obi-Kâ</span> (originaire du <strong>Nigeria</strong>).
+                        </p>
+                        <p class="text-slate-300 text-sm leading-relaxed">
+                            Les futurs mariés souhaitent une <strong>pièce montée originale qui représente un pont</strong> entre leurs deux histoires familiales. Cependant, Monsieur Loyalle rencontre un problème technique : <em>comment réaliser une structure en forme de pont, suffisamment rigide et stable, qui puisse accueillir symboliquement une pièce montée ?</em>
+                        </p>
+                        <div class="pt-2 flex flex-wrap gap-3">
+                            <button onclick="switchMainTab('atelier')" class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm shadow-lg transition flex items-center gap-2">
+                                Commencer l'activité (45 min) <i class="fa-solid fa-arrow-right"></i>
+                            </button>
+                            <button onclick="switchMainTab('simulateur')" class="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-sm border border-white/15 transition flex items-center gap-2">
+                                <i class="fa-solid fa-flask"></i> Tester le simulateur de pliage
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Symbolic Family / Cake Bridge SVG Illustration -->
+                    <div class="lg:col-span-4 flex flex-col items-center justify-center bg-white/5 rounded-2xl p-6 border border-white/10">
+                        <svg viewBox="0 0 260 190" class="w-full max-w-[240px] drop-shadow-md">
+                            <!-- Pillars -->
+                            <rect x="20" y="120" width="28" height="55" rx="4" fill="#d97706" stroke="#fef3c7" stroke-width="2"/>
+                            <rect x="212" y="120" width="28" height="55" rx="4" fill="#d97706" stroke="#fef3c7" stroke-width="2"/>
+                            <!-- Distance arrow -->
+                            <line x1="52" y1="155" x2="208" y2="155" stroke="#38bdf8" stroke-width="2" stroke-dasharray="4"/>
+                            <text x="130" y="170" text-anchor="middle" fill="#38bdf8" font-size="11" font-weight="bold">18 cm libre</text>
+                            <!-- Bridge Deck (U-Folded) -->
+                            <rect x="10" y="106" width="240" height="14" rx="3" fill="#f8fafc" stroke="#94a3b8" stroke-width="2"/>
+                            <polyline points="20,120 35,132 50,120 65,132 80,120 95,132 110,120 125,132 140,120 155,132 170,120 185,132 200,120 215,132 230,120" fill="none" stroke="#fbbf24" stroke-width="2.5"/>
+                            <!-- 3-Tier Wedding Cake -->
+                            <rect x="75" y="82" width="110" height="24" rx="4" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+                            <rect x="95" y="58" width="70" height="24" rx="4" fill="#fde68a" stroke="#f59e0b" stroke-width="2"/>
+                            <rect x="112" y="36" width="36" height="22" rx="4" fill="#fcd34d" stroke="#f59e0b" stroke-width="2"/>
+                            <!-- Flags / Labels -->
+                            <circle cx="45" cy="94" r="8" fill="#BB0000"/>
+                            <text x="45" y="75" text-anchor="middle" fill="#fca5a5" font-size="9" font-weight="bold">KENYA</text>
+                            <circle cx="215" cy="94" r="8" fill="#008751"/>
+                            <text x="215" y="75" text-anchor="middle" fill="#6ee7b7" font-size="9" font-weight="bold">NIGERIA</text>
+                            <!-- Heart Top -->
+                            <path d="M130 28 C130 25 125 20 121 20 C116 20 113 24 113 28 C113 34 130 40 130 40 C130 40 147 34 147 28 C147 24 144 20 139 20 C135 20 130 25 130 28 Z" fill="#ef4444"/>
+                        </svg>
+                        <p class="text-xs text-center text-amber-200/90 mt-3 italic">
+                            « Deux histoires, deux héritages, un pont vers l'avenir. »
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Problématique Technologique -->
+            <div class="bg-amber-50 border-l-4 border-amber-500 p-5 rounded-2xl shadow-sm flex items-start gap-4">
+                <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-700 flex items-center justify-center shrink-0 mt-0.5">
+                    <i class="fa-solid fa-circle-question text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-amber-800">2. Problématique Technologique</h3>
+                    <p class="text-slate-900 font-semibold text-base sm:text-lg mt-1">
+                        Comment concevoir et réaliser une maquette de pont stable et résistante, en utilisant des feuilles blanches A4 et des tubes en carton de rouleaux d'essuie-tout, pour représenter une pièce montée symbolisant l'union de deux histoires culturelles ?
+                    </p>
+                </div>
+            </div>
+
+            <!-- Cahier des Charges & Matériel Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Cahier des charges (2 cols) -->
+                <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+                        <h3 class="font-display font-bold text-base flex items-center gap-2">
+                            <i class="fa-solid fa-clipboard-list text-amber-400"></i> 4. Cahier des Charges de Monsieur Loyalle
+                        </h3>
+                        <span class="text-xs bg-white/10 px-2.5 py-1 rounded-full">8 Exigences</span>
+                    </div>
+                    <div class="divide-y divide-slate-100 text-sm">
+                        <div class="p-4 grid grid-cols-1 sm:grid-cols-3 gap-2 hover:bg-slate-50">
+                            <span class="font-bold text-slate-700"><i class="fa-solid fa-bullseye text-amber-500 mr-2"></i>Fonction</span>
+                            <span class="sm:col-span-2 text-slate-600">Représenter un pont en forme de pièce montée.</span>
+                        </div>
+                        <div class="p-4 grid grid-cols-1 sm:grid-cols-3 gap-2 hover:bg-slate-50">
+                            <span class="font-bold text-slate-700"><i class="fa-solid fa-layer-group text-amber-500 mr-2"></i>Matériaux</span>
+                            <span class="sm:col-span-2 text-slate-600">Utiliser uniquement des <strong>feuilles blanches A4 (max 3)</strong> et <strong>deux tubes en carton</strong> de rouleaux d'essuie-tout pour la structure.</span>
+                        </div>
+                        <div class="p-4 grid grid-cols-1 sm:grid-cols-3 gap-2 hover:bg-slate-50">
+                            <span class="font-bold text-slate-700"><i class="fa-solid fa-ruler-horizontal text-amber-500 mr-2"></i>Dimensions & Tablier</span>
+                            <span class="sm:col-span-2 text-slate-600">Franchir un espace libre de <strong>18 cm</strong> entre deux lignes d'appui. Posséder une surface de pont d'au moins <strong>5 cm de largeur</strong>.</span>
+                        </div>
+                        <div class="p-4 grid grid-cols-1 sm:grid-cols-3 gap-2 hover:bg-slate-50">
+                            <span class="font-bold text-slate-700"><i class="fa-solid fa-Lines-leaning text-amber-500 mr-2"></i>Supports</span>
+                            <span class="sm:col-span-2 text-slate-600">Utiliser les tubes en carton pour réaliser les appuis (4 piliers).</span>
+                        </div>
+                        <div class="p-4 grid grid-cols-1 sm:grid-cols-3 gap-2 hover:bg-slate-50">
+                            <span class="font-bold text-slate-700"><i class="fa-solid fa-weight-hanging text-amber-500 mr-2"></i>Résistance & Stabilité</span>
+                            <span class="sm:col-span-2 text-slate-600">Supporter <strong>5 pièces de 1 €</strong> (ou 5 bouchons) au centre du tablier pendant <strong>10 secondes</strong> sans effondrement, sans basculer ni toucher la surface sous le pont.</span>
+                        </div>
+                        <div class="p-4 grid grid-cols-1 sm:grid-cols-3 gap-2 hover:bg-slate-50">
+                            <span class="font-bold text-slate-700"><i class="fa-solid fa-cake-candles text-amber-500 mr-2"></i>Esthétique & Symbolique</span>
+                            <span class="sm:col-span-2 text-slate-600">Pièce montée d'au moins <strong>3 étages symboliques</strong>. Faire apparaître <strong>Kofi</strong> et <strong>Abénah</strong> ainsi que des références documentées au <strong>Kenya</strong> et au <strong>Nigeria</strong>.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Matériel, Outils & Sécurité (1 col) -->
+                <div class="space-y-6">
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+                        <h3 class="font-display font-bold text-base text-slate-900 flex items-center gap-2 mb-3">
+                            <i class="fa-solid fa-screwdriver-wrench text-emerald-600"></i> Matériel & Outils Autorisés
+                        </h3>
+                        <ul class="space-y-2 text-sm text-slate-600">
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-500"></i> <strong>3 feuilles blanches A4</strong> maximum</li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-500"></i> <strong>2 tubes en carton</strong> d'essuie-tout</li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-500"></i> <strong>40 cm max</strong> de ruban adhésif</li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-scissors text-slate-400"></i> Paire de ciseaux, règle graduée, crayon</li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-palette text-slate-400"></i> Crayons de couleur pour la décoration</li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-coins text-amber-500"></i> 5 pièces de 1 € (ou bouchons) pour l'essai</li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-rose-50 border border-rose-200 rounded-2xl p-5">
+                        <h4 class="font-display font-bold text-sm text-rose-900 flex items-center gap-2 mb-2">
+                            <i class="fa-solid fa-triangle-exclamation text-rose-600"></i> Consignes de Sécurité
+                        </h4>
+                        <p class="text-xs text-rose-800 leading-relaxed">
+                            <strong>Aucune colle chaude, aucun cutter</strong> et aucun objet coupant autre que les ciseaux ne sont autorisés. Demande l'aide d'un adulte pour découper les tubes si nécessaire. La maquette est un prototype pédagogique (pas de véritable nourriture).
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==========================================
+             TAB 2: PARCOURS DIY EN 7 ÉTAPES (45 MIN)
+             ========================================== -->
+        <section id="tab-atelier" class="tab-content hidden space-y-6">
+            <!-- Stepper Navigation -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="font-display font-bold text-lg text-slate-900">Déroulement de l'activité (ABC Learning Design)</h2>
+                    <span class="text-xs font-semibold text-slate-500" id="step-progress-text">Étape 1 sur 7</span>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+                    <button onclick="selectDiyStep(1)" id="step-btn-1" class="diy-step-btn step-active p-2.5 rounded-xl border text-left transition">
+                        <div class="text-[10px] uppercase tracking-wider opacity-75">Étape 1 • 4 min</div>
+                        <div class="text-xs font-bold truncate">1. Acquisition</div>
+                    </button>
+                    <button onclick="selectDiyStep(2)" id="step-btn-2" class="diy-step-btn p-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-left transition">
+                        <div class="text-[10px] uppercase tracking-wider text-slate-400">Étape 2 • 5 min</div>
+                        <div class="text-xs font-bold truncate">2. Investigation</div>
+                    </button>
+                    <button onclick="selectDiyStep(3)" id="step-btn-3" class="diy-step-btn p-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-left transition">
+                        <div class="text-[10px] uppercase tracking-wider text-slate-400">Étape 3 • 2 min</div>
+                        <div class="text-xs font-bold truncate">3. Discussion</div>
+                    </button>
+                    <button onclick="selectDiyStep(4)" id="step-btn-4" class="diy-step-btn p-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-left transition">
+                        <div class="text-[10px] uppercase tracking-wider text-slate-400">Étape 4 • 17 min</div>
+                        <div class="text-xs font-bold truncate">4. Fabrication</div>
+                    </button>
+                    <button onclick="selectDiyStep(5)" id="step-btn-5" class="diy-step-btn p-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-left transition">
+                        <div class="text-[10px] uppercase tracking-wider text-slate-400">Étape 5 • 7 min</div>
+                        <div class="text-xs font-bold truncate">5. Pièce montée</div>
+                    </button>
+                    <button onclick="selectDiyStep(6)" id="step-btn-6" class="diy-step-btn p-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-left transition">
+                        <div class="text-[10px] uppercase tracking-wider text-slate-400">Étape 6 • 7 min</div>
+                        <div class="text-xs font-bold truncate">6. Validation</div>
+                    </button>
+                    <button onclick="selectDiyStep(7)" id="step-btn-7" class="diy-step-btn p-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-left transition">
+                        <div class="text-[10px] uppercase tracking-wider text-slate-400">Étape 7 • 3 min</div>
+                        <div class="text-xs font-bold truncate">7. Communiquer</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- STEP 1: ACQUISITION -->
+            <div id="diy-step-1" class="diy-step-panel bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-5">
+                <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-4">
+                    <div>
+                        <span class="text-xs font-bold uppercase px-2.5 py-1 rounded bg-blue-100 text-blue-800">Étape 1 • Acquisition (4 minutes)</span>
+                        <h3 class="font-display font-bold text-xl text-slate-900 mt-1">Comprendre la commande et le cahier des charges</h3>
+                    </div>
+                    <button onclick="prefillStep1Hints()" class="text-xs font-semibold text-amber-600 hover:text-amber-700 flex items-center gap-1">
+                        <i class="fa-regular fa-lightbulb"></i> Coup de pouce / Vérifier
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">1. Quel est le besoin du pâtissier Monsieur Loyalle ?</label>
+                        <textarea id="s1-q1" rows="3" placeholder="Ex: Réaliser une structure rigide et stable en forme de pont..." class="w-full p-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-amber-500 focus:outline-none text-sm"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">2. Quelle est la fonction d'usage de la maquette ?</label>
+                        <textarea id="s1-q2" rows="3" placeholder="Ex: Franchir 18 cm tout en représentant une pièce montée à 3 étages..." class="w-full p-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-amber-500 focus:outline-none text-sm"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">3. Quels sont les matériaux autorisés pour construire ?</label>
+                        <textarea id="s1-q3" rows="2" placeholder="Liste les matériaux et quantités..." class="w-full p-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-amber-500 focus:outline-none text-sm"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">4. Quelles sont les deux contraintes principales concernant la structure ?</label>
+                        <textarea id="s1-q4" rows="2" placeholder="Distance à franchir et charge à supporter..." class="w-full p-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-amber-500 focus:outline-none text-sm"></textarea>
+                    </div>
+                </div>
+                <div class="flex justify-end pt-2">
+                    <button onclick="selectDiyStep(2)" class="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm flex items-center gap-2">
+                        Étape suivante : Investigation <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- STEP 2: INVESTIGATION (CROQUIS + SAVEURS) -->
+            <div id="diy-step-2" class="diy-step-panel hidden bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
+                <div class="border-b border-slate-100 pb-4">
+                    <span class="text-xs font-bold uppercase px-2.5 py-1 rounded bg-purple-100 text-purple-800">Étape 2 • Investigation (5 minutes)</span>
+                    <h3 class="font-display font-bold text-xl text-slate-900 mt-1">Imaginer la structure, dessiner le croquis et documenter les saveurs</h3>
+                </div>
+
+                <!-- Interactive Sketchpad -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <div class="lg:col-span-7 space-y-3">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <label class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                                <i class="fa-solid fa-pen-ruler text-amber-600"></i> Espace de Croquis Numérique
+                            </label>
+                            <div class="flex items-center gap-1.5">
+                                <button onclick="setBrushColor('#0f172a')" class="w-6 h-6 rounded-full bg-slate-900 border-2 border-white shadow"></button>
+                                <button onclick="setBrushColor('#d97706')" class="w-6 h-6 rounded-full bg-amber-600 border-2 border-white shadow"></button>
+                                <button onclick="setBrushColor('#2563eb')" class="w-6 h-6 rounded-full bg-blue-600 border-2 border-white shadow"></button>
+                                <button onclick="setBrushColor('#16a34a')" class="w-6 h-6 rounded-full bg-green-600 border-2 border-white shadow"></button>
+                                <button onclick="loadTemplateSketch()" class="px-2.5 py-1 text-xs bg-amber-100 text-amber-800 rounded-lg font-medium hover:bg-amber-200 transition">
+                                    + Modèle d'aide
+                                </button>
+                                <button onclick="clearSketchpad()" class="px-2.5 py-1 text-xs bg-rose-100 text-rose-700 rounded-lg font-medium hover:bg-rose-200 transition">
+                                    Effacer
+                                </button>
+                            </div>
+                        </div>
+                        <div class="border-2 border-slate-300 rounded-2xl overflow-hidden bg-white shadow-inner relative">
+                            <canvas id="sketchpad" class="w-full h-[280px] cursor-crosshair block"></canvas>
+                        </div>
+                        <p class="text-xs text-slate-500">
+                            <strong>À faire figurer sur ton croquis :</strong> les 2 lignes d'appui, la distance de 18 cm, le tablier, les éléments de renforcement et la pièce montée à 3 étages.
+                        </p>
+                    </div>
+
+                    <!-- Cultural & Culinary Research -->
+                    <div class="lg:col-span-5 space-y-4 bg-slate-50 p-5 rounded-2xl border border-slate-200">
+                        <h4 class="font-display font-bold text-base text-slate-900 flex items-center gap-2">
+                            <i class="fa-solid fa-earth-africa text-emerald-600"></i> Réflexion sur les Saveurs et les Cultures
+                        </h4>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            Prépare deux références culinaires documentées. <em>Attention : un aliment ou un motif choisi ne représente pas à lui seul l'ensemble de la population d'un pays.</em>
+                        </p>
+
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between">
+                                <label class="text-xs font-bold uppercase text-red-800">🇰🇪 Saveur / Recette du Kenya</label>
+                                <select onchange="fillCulturePreset('kenya', this.value)" class="text-xs border rounded-lg px-2 py-1 bg-white">
+                                    <option value="">-- Idées documentées --</option>
+                                    <option value="Mandazi (beignets parfumés à la cardamome et lait de coco, côte swahilie)">Mandazi à la cardamome</option>
+                                    <option value="Chai ya Tangawizi (thé noir kényan infusé au gingembre frais et lait)">Chai ya Tangawizi (Gingembre)</option>
+                                    <option value="Ugali & Sukuma Wiki (farine de maïs blanc et feuilles vertes braisées)">Ugali & Sukuma Wiki</option>
+                                </select>
+                            </div>
+                            <input type="text" id="culture-kenya" placeholder="Ex: Mandazi parfumés à la cardamome (Côte swahilie)" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm">
+                        </div>
+
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between">
+                                <label class="text-xs font-bold uppercase text-emerald-800">🇳🇬 Saveur / Recette du Nigeria</label>
+                                <select onchange="fillCulturePreset('nigeria', this.value)" class="text-xs border rounded-lg px-2 py-1 bg-white">
+                                    <option value="">-- Idées documentées --</option>
+                                    <option value="Chin Chin (petits croquants frits parfumés à la noix de muscade, servi lors des fêtes)">Chin Chin à la muscade</option>
+                                    <option value="Zobo (boisson infusée aux fleurs d'hibiscus séchées, gingembre et ananas)">Infusion Zobo (Hibiscus)</option>
+                                    <option value="Puff-Puff (beignets dorés traditionnels des célébrations et mariages)">Puff-Puff de fête</option>
+                                </select>
+                            </div>
+                            <input type="text" id="culture-nigeria" placeholder="Ex: Chin Chin parfumés à la noix de muscade" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm">
+                        </div>
+
+                        <div>
+                            <label class="text-xs font-semibold text-slate-600">Source d'information / Provenance :</label>
+                            <input type="text" id="culture-source" placeholder="Ex: Recette familiale, encyclopédie culinaire, FDS..." class="w-full mt-1 px-3 py-2 rounded-xl border border-slate-300 text-sm">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-between pt-2">
+                    <button onclick="selectDiyStep(1)" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 font-semibold text-sm">Précédent</button>
+                    <button onclick="selectDiyStep(3)" class="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm flex items-center gap-2">
+                        Étape suivante : Discussion <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- STEP 3: DISCUSSION -->
+            <div id="diy-step-3" class="diy-step-panel hidden bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-5">
+                <div class="border-b border-slate-100 pb-4">
+                    <span class="text-xs font-bold uppercase px-2.5 py-1 rounded bg-amber-100 text-amber-800">Étape 3 • Discussion (2 minutes)</span>
+                    <h3 class="font-display font-bold text-xl text-slate-900 mt-1">Justifier son choix technique</h3>
+                </div>
+                <p class="text-sm text-slate-600">Explique à voix haute à un membre de ta famille ou par écrit tes choix avant de découper :</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Pourquoi as-tu choisi cette forme de tablier (U, accordéon, rebords) ?</label>
+                        <textarea id="s3-q1" rows="3" placeholder="J'ai choisi un tablier plié en U avec rebords car..." class="w-full p-3 rounded-xl border border-slate-300 text-sm"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Comment comptes-tu rendre ton pont plus résistant à la flexion ?</label>
+                        <textarea id="s3-q2" rows="3" placeholder="En ajoutant des poutres triangulaires ou un accordéon sous le tablier..." class="w-full p-3 rounded-xl border border-slate-300 text-sm"></textarea>
+                    </div>
+                </div>
+                <div class="flex justify-between pt-2">
+                    <button onclick="selectDiyStep(2)" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 font-semibold text-sm">Précédent</button>
+                    <button onclick="selectDiyStep(4)" class="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm flex items-center gap-2">
+                        Étape suivante : Fabrication <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- STEP 4: PRACTICE / FABRICATION -->
+            <div id="diy-step-4" class="diy-step-panel hidden bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
+                <div class="border-b border-slate-100 pb-4">
+                    <span class="text-xs font-bold uppercase px-2.5 py-1 rounded bg-emerald-100 text-emerald-800">Étape 4 • Practice / Fabriquer le pont (17 minutes)</span>
+                    <h3 class="font-display font-bold text-xl text-slate-900 mt-1">Guide de fabrication pas-à-pas</h3>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <!-- A. Supports -->
+                    <div class="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                        <div class="w-9 h-9 rounded-xl bg-amber-500 text-white font-bold flex items-center justify-center">A</div>
+                        <h4 class="font-display font-bold text-base text-slate-900">Réaliser les supports</h4>
+                        <ul class="space-y-2 text-xs text-slate-700">
+                            <li class="flex items-start gap-2"><input type="checkbox" class="mt-1 rounded text-amber-600"> 1. Découpe les 2 tubes en carton en deux parties de longueur égale (4 piliers).</li>
+                            <li class="flex items-start gap-2"><input type="checkbox" class="mt-1 rounded text-amber-600"> 2. Dispose deux morceaux côte à côte à chaque extrémité.</li>
+                            <li class="flex items-start gap-2"><input type="checkbox" class="mt-1 rounded text-amber-600"> 3. Mesure et respecte exactement <strong>18 cm</strong> entre les deux lignes d'appui.</li>
+                        </ul>
+                    </div>
+
+                    <!-- B. Tablier -->
+                    <div class="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                        <div class="w-9 h-9 rounded-xl bg-amber-500 text-white font-bold flex items-center justify-center">B</div>
+                        <h4 class="font-display font-bold text-base text-slate-900">Réaliser le tablier (Feuille 1)</h4>
+                        <ul class="space-y-2 text-xs text-slate-700">
+                            <li class="flex items-start gap-2"><input type="checkbox" class="mt-1 rounded text-amber-600"> 1. Prends la 1re feuille A4 dans le sens de la longueur.</li>
+                            <li class="flex items-start gap-2"><input type="checkbox" class="mt-1 rounded text-amber-600"> 2. Plie les deux grands côtés vers le haut sur environ <strong>2 cm</strong>.</li>
+                            <li class="flex items-start gap-2"><input type="checkbox" class="mt-1 rounded text-amber-600"> 3. Replie le bord supérieur de chaque côté vers l'intérieur sur <strong>1 cm</strong>.</li>
+                            <li class="flex items-start gap-2"><input type="checkbox" class="mt-1 rounded text-amber-600"> 4. Vérifie que la largeur du pont fait au moins 5 cm.</li>
+                        </ul>
+                    </div>
+
+                    <!-- C. Renforcer -->
+                    <div class="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                        <div class="w-9 h-9 rounded-xl bg-amber-500 text-white font-bold flex items-center justify-center">C</div>
+                        <h4 class="font-display font-bold text-base text-slate-900">Renforcer (Feuille 2)</h4>
+                        <ul class="space-y-2 text-xs text-slate-700">
+                            <li class="flex items-start gap-2"><input type="checkbox" class="mt-1 rounded text-amber-600"> 1. Découpe deux longues bandes dans la 2e feuille A4.</li>
+                            <li class="flex items-start gap-2"><input type="checkbox" class="mt-1 rounded text-amber-600"> 2. Plie-les pour obtenir des profils triangulaires ou en accordéon.</li>
+                            <li class="flex items-start gap-2"><input type="checkbox" class="mt-1 rounded text-amber-600"> 3. Fixe-les sous le tablier avec le ruban adhésif (max 40 cm).</li>
+                            <li class="flex items-start gap-2"><input type="checkbox" class="mt-1 rounded text-amber-600"> 4. Pose le tablier sur les 4 piliers (espace libre de 18 cm).</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="flex justify-between pt-2">
+                    <button onclick="selectDiyStep(3)" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 font-semibold text-sm">Précédent</button>
+                    <button onclick="selectDiyStep(5)" class="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm flex items-center gap-2">
+                        Étape suivante : Pièce montée <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- STEP 5: PRODUCTION PIÈCE MONTÉE -->
+            <div id="diy-step-5" class="diy-step-panel hidden bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-5">
+                <div class="border-b border-slate-100 pb-4">
+                    <span class="text-xs font-bold uppercase px-2.5 py-1 rounded bg-pink-100 text-pink-800">Étape 5 • Production : La Pièce Montée (7 minutes)</span>
+                    <h3 class="font-display font-bold text-xl text-slate-900 mt-1">Réaliser les 3 étages et la symbolique culturelle</h3>
+                </div>
+                <p class="text-sm text-slate-600">
+                    Avec la <strong>troisième feuille A4</strong>, forme trois anneaux de diamètres décroissants et superpose-les sur le tablier.
+                </p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                    <div class="p-4 rounded-2xl border-2 border-red-200 bg-red-50/40">
+                        <span class="text-xs font-bold uppercase text-red-700">Partie Gauche du Pont</span>
+                        <h4 class="font-bold text-lg text-slate-900 mt-1">🇰🇪 KENYA</h4>
+                        <p class="text-xs text-slate-600 mt-1">Inscris « Kenya » et ta référence culinaire documentée.</p>
+                    </div>
+                    <div class="p-4 rounded-2xl border-2 border-amber-300 bg-amber-50/60">
+                        <span class="text-xs font-bold uppercase text-amber-800">Au Centre du Pont</span>
+                        <h4 class="font-bold text-base text-slate-900 mt-1">Kofi Seÿkou-Touré + Abénah Obi-Kâ</h4>
+                        <p class="text-xs italic text-amber-900 mt-1">« Deux histoires, deux héritages, un pont vers l'avenir. »</p>
+                    </div>
+                    <div class="p-4 rounded-2xl border-2 border-emerald-200 bg-emerald-50/40">
+                        <span class="text-xs font-bold uppercase text-emerald-700">Partie Droite du Pont</span>
+                        <h4 class="font-bold text-lg text-slate-900 mt-1">🇳🇬 NIGERIA</h4>
+                        <p class="text-xs text-slate-600 mt-1">Inscris « Nigeria » et ta référence culinaire documentée.</p>
+                    </div>
+                </div>
+                <div class="flex justify-between pt-2">
+                    <button onclick="selectDiyStep(4)" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 font-semibold text-sm">Précédent</button>
+                    <button onclick="selectDiyStep(6)" class="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm flex items-center gap-2">
+                        Étape suivante : Validation & Essai <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- STEP 6: VALIDATION -->
+            <div id="diy-step-6" class="diy-step-panel hidden bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
+                <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-4">
+                    <div>
+                        <span class="text-xs font-bold uppercase px-2.5 py-1 rounded bg-indigo-100 text-indigo-800">Étape 6 • Validation (7 minutes)</span>
+                        <h3 class="font-display font-bold text-xl text-slate-900 mt-1">Tester la résistance du pont et analyser les résultats</h3>
+                    </div>
+                    <button onclick="switchMainTab('simulateur')" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-2 shadow">
+                        <i class="fa-solid fa-vial"></i> Ouvrir le Simulateur 10s
+                    </button>
+                </div>
+
+                <!-- Tableau de contrôle -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="space-y-3">
+                        <h4 class="font-bold text-sm text-slate-800">Tableau des résultats du protocole d'essai :</h4>
+                        <div class="divide-y divide-slate-200 border border-slate-200 rounded-xl overflow-hidden text-sm">
+                            <div class="p-3 flex items-center justify-between bg-slate-50">
+                                <span>Distance de 18 cm respectée</span>
+                                <select id="val-c1" class="border rounded-lg px-2.5 py-1 bg-white font-semibold text-xs">
+                                    <option value="Oui">Oui</option>
+                                    <option value="Non">Non</option>
+                                </select>
+                            </div>
+                            <div class="p-3 flex items-center justify-between">
+                                <span>Cinq pièces (ou bouchons) supportées (10 s)</span>
+                                <select id="val-c2" class="border rounded-lg px-2.5 py-1 bg-white font-semibold text-xs">
+                                    <option value="Oui">Oui</option>
+                                    <option value="Non">Non</option>
+                                </select>
+                            </div>
+                            <div class="p-3 flex items-center justify-between bg-slate-50">
+                                <span>Structure stable (pas de basculement)</span>
+                                <select id="val-c3" class="border rounded-lg px-2.5 py-1 bg-white font-semibold text-xs">
+                                    <option value="Oui">Oui</option>
+                                    <option value="Non">Non</option>
+                                </select>
+                            </div>
+                            <div class="p-3 flex items-center justify-between">
+                                <span>Tablier sans effondrement</span>
+                                <select id="val-c4" class="border rounded-lg px-2.5 py-1 bg-white font-semibold text-xs">
+                                    <option value="Oui">Oui</option>
+                                    <option value="Non">Non</option>
+                                </select>
+                            </div>
+                            <div class="p-3 flex items-center justify-between bg-slate-50">
+                                <span>Supports bien positionnés</span>
+                                <select id="val-c5" class="border rounded-lg px-2.5 py-1 bg-white font-semibold text-xs">
+                                    <option value="Oui">Oui</option>
+                                    <option value="Non">Non</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <h4 class="font-bold text-sm text-slate-800">Analyse des résultats :</h4>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Quelle partie de la structure s'est le plus déformée ? Pourquoi les plis améliorent-ils le comportement sous charge ?</label>
+                            <textarea id="s6-analyse1" rows="3" placeholder="Le centre du tablier subit une flexion. Les plis augmentent la rigidité..." class="w-full p-2.5 rounded-xl border border-slate-300 text-sm"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Quelle modification proposerais-tu pour améliorer ton pont ?</label>
+                            <textarea id="s6-analyse2" rows="2" placeholder="Ajouter une poutre triangulaire sous le centre du tablier..." class="w-full p-2.5 rounded-xl border border-slate-300 text-sm"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-between pt-2">
+                    <button onclick="selectDiyStep(5)" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 font-semibold text-sm">Précédent</button>
+                    <button onclick="selectDiyStep(7)" class="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm flex items-center gap-2">
+                        Étape suivante : Communiquer <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- STEP 7: COMMUNIQUER -->
+            <div id="diy-step-7" class="diy-step-panel hidden bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-5">
+                <div class="border-b border-slate-100 pb-4">
+                    <span class="text-xs font-bold uppercase px-2.5 py-1 rounded bg-teal-100 text-teal-800">Étape 7 • Communiquer (3 minutes)</span>
+                    <h3 class="font-display font-bold text-xl text-slate-900 mt-1">Présenter sa réalisation</h3>
+                </div>
+
+                <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4">
+                    <h4 class="font-bold text-sm text-slate-800">Complète ton texte de présentation orale/écrite :</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <label class="font-medium text-slate-700">« J'ai conçu ce pont en utilisant...</label>
+                            <input type="text" id="comm-1" placeholder="3 feuilles A4 et 2 tubes en carton découpés en 4 piliers" class="w-full mt-1 px-3 py-2 rounded-xl border border-slate-300">
+                        </div>
+                        <div>
+                            <label class="font-medium text-slate-700">J'ai renforcé sa structure grâce à...</label>
+                            <input type="text" id="comm-2" placeholder="un pliage en U du tablier et des profils en accordéon" class="w-full mt-1 px-3 py-2 rounded-xl border border-slate-300">
+                        </div>
+                        <div>
+                            <label class="font-medium text-slate-700">Mon essai a montré que...</label>
+                            <input type="text" id="comm-3" placeholder="le pont supporte les 5 pièces pendant 10 secondes sans fléchir" class="w-full mt-1 px-3 py-2 rounded-xl border border-slate-300">
+                        </div>
+                        <div>
+                            <label class="font-medium text-slate-700">Cette pièce montée symbolise...</label>
+                            <input type="text" id="comm-4" placeholder="l'union de Kofi et Abénah ainsi que le partage entre Kenya et Nigeria »" class="w-full mt-1 px-3 py-2 rounded-xl border border-slate-300">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-between pt-2">
+                    <button onclick="selectDiyStep(6)" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 font-semibold text-sm">Précédent</button>
+                    <button onclick="switchMainTab('evaluations')" class="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-sm flex items-center gap-2 shadow">
+                        Passer aux Évaluations (5e / 4e / 3e) <i class="fa-solid fa-graduation-cap"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==========================================
+             TAB 3: SIMULATEUR PHYSIQUE & PROTOCOLE 10s
+             ========================================== -->
+        <section id="tab-simulateur" class="tab-content hidden space-y-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4 mb-6">
+                    <div>
+                        <span class="text-xs font-bold uppercase px-2.5 py-1 rounded bg-amber-100 text-amber-800">Laboratoire Virtuel • Flexion & Résistance</span>
+                        <h2 class="font-display font-bold text-2xl text-slate-900 mt-1">Simulateur Mécanique du Pont (Protocole 10 secondes)</h2>
+                        <p class="text-sm text-slate-500">Teste l'influence du pliage, des renforts et de la portée (18 cm ou défi 3e à 22 cm) sous la charge de 5 pièces de 1 €.</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="startSimTest()" id="sim-start-btn" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow flex items-center gap-2 transition">
+                            <i class="fa-solid fa-play"></i> Lancer le test (10 s)
+                        </button>
+                        <button onclick="resetSim()" class="px-4 py-2.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold text-sm transition">
+                            Réinitialiser
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Controls & Parameters -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">1. Forme du Tablier (Feuille 1)</label>
+                        <select id="sim-deck" onchange="updateSimVisuals()" class="w-full p-2 rounded-lg border border-slate-300 text-sm font-medium bg-white">
+                            <option value="flat">Feuille A4 plate (Sans pli)</option>
+                            <option value="ufold" selected>Profil en U (Plis 2 cm + rebords 1 cm)</option>
+                        </select>
+                    </div>
+                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">2. Renforts sous tablier (Feuille 2)</label>
+                        <select id="sim-reinforce" onchange="updateSimVisuals()" class="w-full p-2 rounded-lg border border-slate-300 text-sm font-medium bg-white">
+                            <option value="none">Aucun renfort</option>
+                            <option value="flat">Feuille supplémentaire plate</option>
+                            <option value="accordion" selected>Poutres triangulaires / Accordéon</option>
+                        </select>
+                    </div>
+                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">3. Distance entre appuis</label>
+                        <select id="sim-span" onchange="updateSimVisuals()" class="w-full p-2 rounded-lg border border-slate-300 text-sm font-medium bg-white">
+                            <option value="18" selected>18 cm (Cahier des charges)</option>
+                            <option value="22">22 cm (Nouvelle exigence 3e - N4b)</option>
+                        </select>
+                    </div>
+                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">4. Charge au centre (Pièces 1 €)</label>
+                        <div class="flex items-center justify-between mt-1">
+                            <button onclick="changeCoins(-1)" class="w-8 h-8 rounded-lg bg-slate-200 hover:bg-slate-300 font-bold">-</button>
+                            <span id="sim-coins-label" class="font-display font-bold text-lg text-amber-600">5 pièces</span>
+                            <button onclick="changeCoins(1)" class="w-8 h-8 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold">+</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interactive Visual Stage -->
+                <div class="relative bg-gradient-to-b from-slate-900 to-slate-800 rounded-2xl p-6 text-white overflow-hidden border border-slate-700">
+                    <div class="flex flex-wrap justify-between items-center gap-4 mb-4">
+                        <div class="flex items-center gap-3">
+                            <span class="px-3 py-1 rounded-full text-xs font-bold bg-slate-700 text-amber-300" id="sim-status-badge">
+                                Prêt pour l'essai
+                            </span>
+                            <span class="text-xs text-slate-300" id="sim-deflection-text">Flèche (déformation) : 0 mm</span>
+                        </div>
+                        <div class="font-mono text-2xl font-bold text-emerald-400" id="sim-chrono">00.0 s / 10.0 s</div>
+                    </div>
+
+                    <!-- SVG Bridge Visualization -->
+                    <div class="flex justify-center items-center py-4">
+                        <svg id="sim-svg" viewBox="0 0 600 230" class="w-full max-w-3xl h-auto">
+                            <!-- Ground Surface -->
+                            <rect x="0" y="205" width="600" height="25" fill="#1e293b"/>
+                            <line x1="0" y1="205" x2="600" y2="205" stroke="#475569" stroke-width="3"/>
+
+                            <!-- Left Cardboard Pillars -->
+                            <g id="sim-pillar-left" transform="translate(95, 115)">
+                                <rect x="0" y="0" width="24" height="90" rx="3" fill="#b45309" stroke="#f59e0b" stroke-width="1.5"/>
+                                <rect x="26" y="0" width="24" height="90" rx="3" fill="#d97706" stroke="#f59e0b" stroke-width="1.5"/>
+                            </g>
+
+                            <!-- Right Cardboard Pillars -->
+                            <g id="sim-pillar-right" transform="translate(455, 115)">
+                                <rect x="0" y="0" width="24" height="90" rx="3" fill="#d97706" stroke="#f59e0b" stroke-width="1.5"/>
+                                <rect x="26" y="0" width="24" height="90" rx="3" fill="#b45309" stroke="#f59e0b" stroke-width="1.5"/>
+                            </g>
+
+                            <!-- Span indicator -->
+                            <line id="sim-span-line" x1="150" y1="185" x2="450" y2="185" stroke="#38bdf8" stroke-width="2" stroke-dasharray="5,5"/>
+                            <text id="sim-span-text" x="300" y="200" text-anchor="middle" fill="#38bdf8" font-size="13" font-weight="bold">Espace libre : 18 cm</text>
+
+                            <!-- Deformable Group (Deck + Cake + Coins) -->
+                            <g id="sim-bridge-group">
+                                <!-- Accordion / Triangular reinforcement under deck -->
+                                <path id="sim-truss-path" d="M145,115 L170,132 L195,115 L220,132 L245,115 L270,132 L295,115 L320,132 L345,115 L370,132 L395,115 L420,132 L455,115" fill="none" stroke="#fbbf24" stroke-width="3"/>
+                                
+                                <!-- Main Paper Deck Path -->
+                                <path id="sim-deck-path" d="M85,105 Q300,105 515,105 L515,116 Q300,116 85,116 Z" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>
+
+                                <!-- 3-Tier Cake & Coins Group centered at X=300 -->
+                                <g id="sim-load-group" transform="translate(300, 105)">
+                                    <!-- 3 Symbolic Cake Tiers -->
+                                    <rect x="-55" y="-20" width="110" height="20" rx="3" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+                                    <rect x="-38" y="-38" width="76" height="18" rx="3" fill="#fde68a" stroke="#f59e0b" stroke-width="1.5"/>
+                                    <rect x="-22" y="-54" width="44" height="16" rx="3" fill="#fcd34d" stroke="#f59e0b" stroke-width="1.5"/>
+                                    <!-- Coins Stack -->
+                                    <g id="sim-coins-svg"></g>
+                                </g>
+                            </g>
+                        </svg>
+                    </div>
+
+                    <!-- Pedagogical Mechanical Explanation -->
+                    <div id="sim-feedback-box" class="mt-3 p-4 rounded-xl bg-slate-800/90 border border-slate-600 text-xs sm:text-sm text-slate-200">
+                        <strong class="text-amber-400"><i class="fa-solid fa-gears mr-1"></i> Analyse mécanique :</strong>
+                        Lorsque les 5 pièces sont posées au centre, le tablier est soumis à de la <strong>flexion</strong>. Un profil plié en U associé à une triangulation en accordéon augmente considérablement la rigidité sans ajouter de masse excessive.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==========================================
+             TAB 4: ÉVALUATIONS DIFFÉRENCIÉES (5e / 4e / 3e)
+             ========================================== -->
+        <section id="tab-evaluations" class="tab-content hidden space-y-6">
+            <!-- Level Selector Header -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                <div class="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                        <span class="text-xs font-bold uppercase px-2.5 py-1 rounded bg-amber-100 text-amber-800">Évaluations de compétences Cycle 4</span>
+                        <h2 class="font-display font-bold text-2xl text-slate-900 mt-1">Évaluations Différenciées (N1 à N4 • /20 points)</h2>
+                        <p class="text-sm text-slate-500">Choisis ta classe pour afficher le sujet officiel correspondant et vérifier ton score.</p>
+                    </div>
+
+                    <!-- Class Switcher Buttons -->
+                    <div class="inline-flex p-1.5 rounded-2xl bg-slate-100 border border-slate-200">
+                        <button onclick="switchEvalLevel('5e')" id="eval-btn-5e" class="eval-lvl-btn px-5 py-2 rounded-xl font-display font-bold text-sm bg-slate-900 text-white shadow transition">
+                            Évaluation N°1 • 5ème
+                        </button>
+                        <button onclick="switchEvalLevel('4e')" id="eval-btn-4e" class="eval-lvl-btn px-5 py-2 rounded-xl font-display font-bold text-sm text-slate-600 hover:text-slate-900 transition">
+                            Évaluation N°2 • 4ème
+                        </button>
+                        <button onclick="switchEvalLevel('3e')" id="eval-btn-3e" class="eval-lvl-btn px-5 py-2 rounded-xl font-display font-bold text-sm text-slate-600 hover:text-slate-900 transition">
+                            Évaluation N°3 • 3ème
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Score & Correction Bar -->
+                <div class="mt-4 pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4">
+                    <div class="flex items-center gap-4 text-xs text-slate-600">
+                        <span><strong>N1 :</strong> Connaissance (5 pts)</span>
+                        <span><strong>N2 :</strong> Compréhension (5 pts)</span>
+                        <span><strong>N3 :</strong> Application (5 pts)</span>
+                        <span><strong>N4 :</strong> Maîtrise (5 pts)</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div id="eval-score-badge" class="px-4 py-2 rounded-xl bg-amber-50 border border-amber-200 font-display font-bold text-amber-900 text-sm">
+                            Note estimée : -- / 20
+                        </div>
+                        <button onclick="gradeCurrentEvaluation()" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow transition flex items-center gap-2">
+                            <i class="fa-solid fa-check-double"></i> Corriger & Voir le barème
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==========================================
+                 EVALUATION 5e (Pages 11-17)
+                 ========================================== -->
+            <div id="eval-panel-5e" class="eval-panel space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- N1 - 5e -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span class="px-2.5 py-1 rounded bg-sky-100 text-sky-800 font-bold text-xs">N1 - CONNAISSANCE (5 pts)</span>
+                            <span class="text-xs text-slate-400">Identifier et nommer</span>
+                        </div>
+
+                        <div class="space-y-2">
+                            <p class="font-bold text-sm text-slate-800">N1a - Relie chaque élément constitutif du pont à sa définition (2,5 pts) :</p>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex items-center justify-between gap-2 bg-slate-50 p-2.5 rounded-xl">
+                                    <span class="font-medium">1. Tablier</span>
+                                    <select id="e5-n1a-1" class="border rounded-lg px-2 py-1 text-xs bg-white">
+                                        <option value="">-- Choisir --</option>
+                                        <option value="A">A. Éléments qui soutiennent le pont</option>
+                                        <option value="B">B. Partie horizontale du pont</option>
+                                        <option value="C">C. Éléments qui améliorent la résistance</option>
+                                    </select>
+                                </div>
+                                <div class="flex items-center justify-between gap-2 bg-slate-50 p-2.5 rounded-xl">
+                                    <span class="font-medium">2. Piles (Supports)</span>
+                                    <select id="e5-n1a-2" class="border rounded-lg px-2 py-1 text-xs bg-white">
+                                        <option value="">-- Choisir --</option>
+                                        <option value="A">A. Éléments qui soutiennent le pont</option>
+                                        <option value="B">B. Partie horizontale du pont</option>
+                                        <option value="C">C. Éléments qui améliorent la résistance</option>
+                                    </select>
+                                </div>
+                                <div class="flex items-center justify-between gap-2 bg-slate-50 p-2.5 rounded-xl">
+                                    <span class="font-medium">3. Renforts</span>
+                                    <select id="e5-n1a-3" class="border rounded-lg px-2 py-1 text-xs bg-white">
+                                        <option value="">-- Choisir --</option>
+                                        <option value="A">A. Éléments qui soutiennent le pont</option>
+                                        <option value="B">B. Partie horizontale du pont</option>
+                                        <option value="C">C. Éléments qui améliorent la résistance</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2 pt-2 border-t border-slate-100">
+                            <p class="font-bold text-sm text-slate-800">N1b - Complète avec : carton, papier, pliage, assemblage (2,5 pts) :</p>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                                <div>
+                                    <label class="text-slate-600">Feuilles A4 fabriquées en :</label>
+                                    <select id="e5-n1b-1" class="w-full mt-1 border rounded-lg p-1.5 bg-white">
+                                        <option value="">--</option><option value="papier">papier</option><option value="carton">carton</option><option value="pliage">pliage</option><option value="assemblage">assemblage</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-slate-600">Tubes d'essuie-tout en :</label>
+                                    <select id="e5-n1b-2" class="w-full mt-1 border rounded-lg p-1.5 bg-white">
+                                        <option value="">--</option><option value="papier">papier</option><option value="carton">carton</option><option value="pliage">pliage</option><option value="assemblage">assemblage</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-slate-600">Pour renforcer le tablier :</label>
+                                    <select id="e5-n1b-3" class="w-full mt-1 border rounded-lg p-1.5 bg-white">
+                                        <option value="">--</option><option value="papier">papier</option><option value="carton">carton</option><option value="pliage">pliage</option><option value="assemblage">assemblage</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-slate-600">Pour fixer les éléments :</label>
+                                    <select id="e5-n1b-4" class="w-full mt-1 border rounded-lg p-1.5 bg-white">
+                                        <option value="">--</option><option value="papier">papier</option><option value="carton">carton</option><option value="pliage">pliage</option><option value="assemblage">assemblage</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- N2 - 5e -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span class="px-2.5 py-1 rounded bg-emerald-100 text-emerald-800 font-bold text-xs">N2 - COMPRÉHENSION (5 pts)</span>
+                            <span class="text-xs text-slate-400">Expliquer le fonctionnement</span>
+                        </div>
+
+                        <div class="space-y-2">
+                            <p class="font-bold text-sm text-slate-800">N2a - Intérêt du pliage du papier (2,5 pts) :</p>
+                            <p class="text-xs text-slate-600">Quelle forme résiste généralement mieux à la déformation lorsqu'on la charge ?</p>
+                            <div class="flex gap-4 text-sm">
+                                <label class="flex items-center gap-2"><input type="radio" name="e5-n2a" value="A"> Forme A : feuille plate</label>
+                                <label class="flex items-center gap-2"><input type="radio" name="e5-n2a" value="B"> Forme B : feuille pliée en U</label>
+                            </div>
+                            <input type="text" id="e5-n2a-justif" placeholder="Explique ton choix en une phrase..." class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs">
+                        </div>
+
+                        <div class="space-y-2 pt-2 border-t border-slate-100">
+                            <p class="font-bold text-sm text-slate-800">N2b - Rôle des supports en carton (2,5 pts) :</p>
+                            <div class="space-y-1 text-xs">
+                                <label class="flex items-center gap-2"><input type="radio" name="e5-n2b" value="deco"> Pour décorer le pont uniquement.</label>
+                                <label class="flex items-center gap-2"><input type="radio" name="e5-n2b" value="soutenir"> Pour soutenir le tablier et transmettre les charges vers les appuis.</label>
+                            </div>
+                            <input type="text" id="e5-n2b-justif" placeholder="Explique avec tes mots..." class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs">
+                        </div>
+                    </div>
+
+                    <!-- N3 - 5e -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span class="px-2.5 py-1 rounded bg-amber-100 text-amber-800 font-bold text-xs">N3 - APPLICATION (5 pts)</span>
+                            <span class="text-xs text-slate-400">Réaliser et tester</span>
+                        </div>
+
+                        <div class="space-y-2">
+                            <p class="font-bold text-sm text-slate-800">N3a - Remets les étapes de fabrication dans l'ordre de 1 à 4 (2,5 pts) :</p>
+                            <div class="space-y-1.5 text-xs">
+                                <div class="flex items-center justify-between bg-slate-50 p-2 rounded-lg">
+                                    <span>Assembler le tablier et les supports</span>
+                                    <input type="number" id="e5-n3a-assemble" min="1" max="4" placeholder="N°" class="w-14 border rounded p-1 text-center font-bold">
+                                </div>
+                                <div class="flex items-center justify-between bg-slate-50 p-2 rounded-lg">
+                                    <span>Réaliser le croquis</span>
+                                    <input type="number" id="e5-n3a-croquis" min="1" max="4" placeholder="N°" class="w-14 border rounded p-1 text-center font-bold">
+                                </div>
+                                <div class="flex items-center justify-between bg-slate-50 p-2 rounded-lg">
+                                    <span>Préparer et plier le papier</span>
+                                    <input type="number" id="e5-n3a-plier" min="1" max="4" placeholder="N°" class="w-14 border rounded p-1 text-center font-bold">
+                                </div>
+                                <div class="flex items-center justify-between bg-slate-50 p-2 rounded-lg">
+                                    <span>Tester la stabilité du pont</span>
+                                    <input type="number" id="e5-n3a-tester" min="1" max="4" placeholder="N°" class="w-14 border rounded p-1 text-center font-bold">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2 pt-2 border-t border-slate-100">
+                            <p class="font-bold text-sm text-slate-800">N3b - Appliquer le protocole de test (2,5 pts) :</p>
+                            <label class="flex items-center gap-2 text-xs"><input type="checkbox" id="e5-n3b-check" checked> J'ai renseigné le tableau de vérification après mon test de 10 secondes.</label>
+                        </div>
+                    </div>
+
+                    <!-- N4 - 5e -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span class="px-2.5 py-1 rounded bg-purple-100 text-purple-800 font-bold text-xs">N4 - MAÎTRISE (5 pts)</span>
+                            <span class="text-xs text-slate-400">Améliorer et justifier</span>
+                        </div>
+
+                        <div class="space-y-2">
+                            <p class="font-bold text-sm text-slate-800">N4a - Le milieu du tablier se courbe. Quelle solution choisir ? (2,5 pts)</p>
+                            <div class="space-y-1 text-xs">
+                                <label class="flex items-center gap-2"><input type="radio" name="e5-n4a" value="retirer"> Retirer les renforts.</label>
+                                <label class="flex items-center gap-2"><input type="radio" name="e5-n4a" value="ajouter"> Ajouter un pli de renforcement sous le tablier.</label>
+                                <label class="flex items-center gap-2"><input type="radio" name="e5-n4a" value="supprimer"> Supprimer un support.</label>
+                            </div>
+                            <input type="text" id="e5-n4a-justif" placeholder="Explique pourquoi ta solution améliore le pont..." class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs">
+                        </div>
+
+                        <div class="space-y-2 pt-2 border-t border-slate-100">
+                            <p class="font-bold text-sm text-slate-800">N4b - Vérifier le cahier des charges et proposer une piste d'amélioration (2,5 pts) :</p>
+                            <textarea id="e5-n4b-text" rows="2" placeholder="Exigence à améliorer et comment procéder..." class="w-full p-2.5 rounded-xl border border-slate-300 text-xs"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Correction Officielle 5e (Hidden until graded) -->
+                <div id="corr-5e" class="hidden bg-emerald-50 border border-emerald-200 rounded-2xl p-6 space-y-2 text-xs text-emerald-950">
+                    <h4 class="font-display font-bold text-sm text-emerald-900 flex items-center gap-2"><i class="fa-solid fa-key"></i> Correction & Barème Officiel - Classe de 5e</h4>
+                    <p><strong>N1a (2,5 pts) :</strong> 1-B (Tablier = partie horizontale) ; 2-A (Piles = soutiennent) ; 3-C (Renforts = améliorent la résistance).</p>
+                    <p><strong>N1b (2,5 pts) :</strong> Papier ; carton ; pliage ; assemblage.</p>
+                    <p><strong>N2a (2,5 pts) :</strong> Forme B. Le pliage en U augmente la rigidité du tablier face à la charge.</p>
+                    <p><strong>N2b (2,5 pts) :</strong> Les supports soutiennent le tablier et transmettent les charges aux appuis.</p>
+                    <p><strong>N3a (2,5 pts) :</strong> Croquis : 1 ; Préparation et pliage : 2 ; Assemblage : 3 ; Test : 4.</p>
+                    <p><strong>N4a & N4b (5 pts) :</strong> Ajout d'un pli ou d'un renfort sous le tablier avec justification cohérente.</p>
+                </div>
+            </div>
+
+            <!-- ==========================================
+                 EVALUATION 4e (Pages 18-24)
+                 ========================================== -->
+            <div id="eval-panel-4e" class="eval-panel hidden space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- N1 - 4e -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                        <span class="px-2.5 py-1 rounded bg-sky-100 text-sky-800 font-bold text-xs">N1 - CONNAISSANCE (5 pts)</span>
+                        <div class="space-y-2">
+                            <p class="font-bold text-sm text-slate-800">N1a - Caractéristiques des matériaux (2,5 pts) :</p>
+                            <div class="grid grid-cols-2 gap-2 text-xs">
+                                <div class="p-2 bg-slate-50 rounded-lg">
+                                    <span class="font-bold block">Papier A4</span>
+                                    <select id="e4-n1a-1" class="w-full mt-1 border rounded p-1 bg-white">
+                                        <option value="">Utilisation...</option><option value="tablier">Tablier</option><option value="support">Support</option>
+                                    </select>
+                                    <select id="e4-n1a-2" class="w-full mt-1 border rounded p-1 bg-white">
+                                        <option value="">Caractéristique...</option><option value="leger">Léger / Pliable</option><option value="rigidite">Rigidité en compression</option>
+                                    </select>
+                                </div>
+                                <div class="p-2 bg-slate-50 rounded-lg">
+                                    <span class="font-bold block">Carton du tube</span>
+                                    <select id="e4-n1a-3" class="w-full mt-1 border rounded p-1 bg-white">
+                                        <option value="">Utilisation...</option><option value="support">Support</option><option value="tablier">Tablier</option>
+                                    </select>
+                                    <select id="e4-n1a-4" class="w-full mt-1 border rounded p-1 bg-white">
+                                        <option value="">Caractéristique...</option><option value="rigidite">Rigidité</option><option value="leger">Léger</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2 pt-2 border-t border-slate-100">
+                            <p class="font-bold text-sm text-slate-800">N1b - Mode de sollicitation mécanique du tablier sous les 5 pièces (2,5 pts) :</p>
+                            <div class="flex gap-4 text-xs">
+                                <label class="flex items-center gap-1"><input type="radio" name="e4-n1b" value="compression"> Compression</label>
+                                <label class="flex items-center gap-1"><input type="radio" name="e4-n1b" value="flexion"> Flexion</label>
+                                <label class="flex items-center gap-1"><input type="radio" name="e4-n1b" value="torsion"> Torsion</label>
+                            </div>
+                            <input type="text" id="e4-n1b-def" placeholder="Définis ce terme avec tes mots..." class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs">
+                        </div>
+                    </div>
+
+                    <!-- N2 - 4e -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                        <span class="px-2.5 py-1 rounded bg-emerald-100 text-emerald-800 font-bold text-xs">N2 - COMPRÉHENSION (5 pts)</span>
+                        <div class="space-y-2">
+                            <p class="font-bold text-sm text-slate-800">N2a - Comparer deux formes de tablier (A: plate vs B: pliée en U) (2,5 pts) :</p>
+                            <select id="e4-n2a-choice" class="w-full border rounded-lg p-2 text-xs bg-white">
+                                <option value="">Quelle solution est la plus résistante à la flexion ?</option>
+                                <option value="A">Solution A (Feuille plate)</option>
+                                <option value="B">Solution B (Feuille pliée en U avec bords relevés)</option>
+                            </select>
+                            <input type="text" id="e4-n2a-exp" placeholder="Quelle caractéristique explique cette différence ?" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs">
+                        </div>
+                        <div class="space-y-2 pt-2 border-t border-slate-100">
+                            <p class="font-bold text-sm text-slate-800">N2b - Relation entre matériau, forme et résistance (2,5 pts) :</p>
+                            <textarea id="e4-n2b-exp" rows="2" placeholder="Explique pourquoi matériaux et formes doivent être adaptés à la fonction de chaque élément..." class="w-full p-2.5 rounded-xl border border-slate-300 text-xs"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- N3 - 4e -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                        <span class="px-2.5 py-1 rounded bg-amber-100 text-amber-800 font-bold text-xs">N3 - APPLICATION (5 pts)</span>
+                        <div class="space-y-2">
+                            <p class="font-bold text-sm text-slate-800">N3a - Planifier la fabrication en 17 minutes (Total = 17 min) (2,5 pts) :</p>
+                            <div class="grid grid-cols-2 gap-2 text-xs">
+                                <div class="flex items-center justify-between bg-slate-50 p-2 rounded">
+                                    <span>1. Préparer & tracer</span>
+                                    <input type="number" id="e4-t1" value="3" min="1" max="15" onchange="update4eTimeTotal()" class="w-12 border rounded text-center font-bold">
+                                </div>
+                                <div class="flex items-center justify-between bg-slate-50 p-2 rounded">
+                                    <span>2. Supports</span>
+                                    <input type="number" id="e4-t2" value="4" min="1" max="15" onchange="update4eTimeTotal()" class="w-12 border rounded text-center font-bold">
+                                </div>
+                                <div class="flex items-center justify-between bg-slate-50 p-2 rounded">
+                                    <span>3. Tablier & renforts</span>
+                                    <input type="number" id="e4-t3" value="6" min="1" max="15" onchange="update4eTimeTotal()" class="w-12 border rounded text-center font-bold">
+                                </div>
+                                <div class="flex items-center justify-between bg-slate-50 p-2 rounded">
+                                    <span>4. Assembler</span>
+                                    <input type="number" id="e4-t4" value="4" min="1" max="15" onchange="update4eTimeTotal()" class="w-12 border rounded text-center font-bold">
+                                </div>
+                            </div>
+                            <p class="text-xs font-bold text-right" id="e4-time-sum">Total planifié : 17 / 17 min</p>
+                        </div>
+
+                        <div class="space-y-2 pt-2 border-t border-slate-100">
+                            <p class="font-bold text-sm text-slate-800">N3b - Proposer les étapes d'un protocole de test et son critère de validation (2,5 pts) :</p>
+                            <textarea id="e4-n3b-proto" rows="2" placeholder="1. Mesurer 18 cm 2. Poser 5 pièces au centre 3. Chronométrer 10 s 4. Vérifier l'absence d'effondrement..." class="w-full p-2.5 rounded-xl border border-slate-300 text-xs"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- N4 - 4e -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                        <span class="px-2.5 py-1 rounded bg-purple-100 text-purple-800 font-bold text-xs">N4 - MAÎTRISE (5 pts)</span>
+                        <div class="space-y-2">
+                            <p class="font-bold text-sm text-slate-800">N4a - Analyser un résultat d'essai (Pont A : 4 s avant déformation vs Pont B : 12 s) (2,5 pts) :</p>
+                            <select id="e4-n4a-proto" class="w-full border rounded-lg p-2 text-xs bg-white">
+                                <option value="">Quel prototype respecte l'exigence de 10 secondes ?</option>
+                                <option value="A">Prototype Pont A (4 secondes)</option>
+                                <option value="B">Prototype Pont B (12 secondes)</option>
+                            </select>
+                            <input type="text" id="e4-n4a-justif" placeholder="Justifie avec les données du tableau (12 s > 10 s)..." class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs">
+                        </div>
+
+                        <div class="space-y-2 pt-2 border-t border-slate-100">
+                            <p class="font-bold text-sm text-slate-800">N4b - Comparer Solution A (feuille plate) et Solution B (renfort triangulaire) (2,5 pts) :</p>
+                            <select id="e4-n4b-choice" class="w-full border rounded-lg p-2 text-xs bg-white">
+                                <option value="">Mon choix de solution pour améliorer le pont :</option>
+                                <option value="A">Solution A : feuille supplémentaire à plat</option>
+                                <option value="B">Solution B : feuille pliée en renfort triangulaire</option>
+                            </select>
+                            <textarea id="e4-n4b-justif" rows="2" placeholder="Justifie ton choix et compare papier et carton..." class="w-full p-2.5 rounded-xl border border-slate-300 text-xs"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Correction Officielle 4e -->
+                <div id="corr-4e" class="hidden bg-emerald-50 border border-emerald-200 rounded-2xl p-6 space-y-2 text-xs text-emerald-950">
+                    <h4 class="font-display font-bold text-sm text-emerald-900 flex items-center gap-2"><i class="fa-solid fa-key"></i> Correction & Barème Officiel - Classe de 4e</h4>
+                    <p><strong>N1a (2,5 pts) :</strong> Papier A4 pour le tablier (léger/pliable), Carton du tube pour les supports (rigidité).</p>
+                    <p><strong>N1b (2,5 pts) :</strong> Flexion : déformation d'un élément perpendiculairement à son axe sous l'effet d'une charge.</p>
+                    <p><strong>N2a & N2b (5 pts) :</strong> Solution B ; les plis augmentent la rigidité géométrique selon les contraintes mécaniques.</p>
+                    <p><strong>N3a & N3b (5 pts) :</strong> Planification cohérente totalisant 17 min. Protocole complet avec critère de 10 s.</p>
+                    <p><strong>N4a & N4b (5 pts) :</strong> Prototype B (12 s > 10 s exigées). Choix de la Solution B (renfort triangulaire plus rigide pour la même quantité de matière).</p>
+                </div>
+            </div>
+
+            <!-- ==========================================
+                 EVALUATION 3e (Pages 25-32)
+                 ========================================== -->
+            <div id="eval-panel-3e" class="eval-panel hidden space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- N1 - 3e -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                        <span class="px-2.5 py-1 rounded bg-sky-100 text-sky-800 font-bold text-xs">N1 - CONNAISSANCE (5 pts)</span>
+                        <div class="space-y-2">
+                            <p class="font-bold text-sm text-slate-800">N1a - Identifier les exigences du cahier des charges (2,5 pts) :</p>
+                            <div class="grid grid-cols-2 gap-2 text-xs">
+                                <input type="text" id="e3-n1a-dist" placeholder="Distance à franchir (ex: 18 cm)" class="border rounded-lg p-2">
+                                <input type="text" id="e3-n1a-pieces" placeholder="Nombre de pièces (ex: 5)" class="border rounded-lg p-2">
+                                <input type="text" id="e3-n1a-duree" placeholder="Durée du test (ex: 10 s)" class="border rounded-lg p-2">
+                                <input type="text" id="e3-n1a-etages" placeholder="Nombre d'étages (ex: 3)" class="border rounded-lg p-2">
+                            </div>
+                        </div>
+
+                        <div class="space-y-2 pt-2 border-t border-slate-100">
+                            <p class="font-bold text-sm text-slate-800">N1b - Associe chaque terme à sa définition (2,5 pts) :</p>
+                            <div class="grid grid-cols-3 gap-2 text-xs">
+                                <div>
+                                    <label class="font-semibold block">Pliage :</label>
+                                    <select id="e3-n1b-pliage" class="w-full border rounded p-1.5 bg-white">
+                                        <option value="">--</option><option value="A">A (Charge transv.)</option><option value="B">B (Donner un angle)</option><option value="C">C (Réunir éléments)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="font-semibold block">Assemblage :</label>
+                                    <select id="e3-n1b-assemblage" class="w-full border rounded p-1.5 bg-white">
+                                        <option value="">--</option><option value="A">A (Charge transv.)</option><option value="B">B (Donner un angle)</option><option value="C">C (Réunir éléments)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="font-semibold block">Flexion :</label>
+                                    <select id="e3-n1b-flexion" class="w-full border rounded p-1.5 bg-white">
+                                        <option value="">--</option><option value="A">A (Charge transv.)</option><option value="B">B (Donner un angle)</option><option value="C">C (Réunir éléments)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- N2 - 3e -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                        <span class="px-2.5 py-1 rounded bg-emerald-100 text-emerald-800 font-bold text-xs">N2 - COMPRÉHENSION (5 pts)</span>
+                        <div class="space-y-2">
+                            <p class="font-bold text-sm text-slate-800">N2a - Choix techniques et environnementaux (écoconception, recyclage) (2,5 pts) :</p>
+                            <textarea id="e3-n2a-eco" rows="2" placeholder="Explique pourquoi le papier et le carton sont adaptés (mécanique, pliage, réutilisation/recyclage)..." class="w-full p-2.5 rounded-xl border border-slate-300 text-xs"></textarea>
+                        </div>
+
+                        <div class="space-y-2 pt-2 border-t border-slate-100">
+                            <p class="font-bold text-sm text-slate-800">N2b - Interpréter les résultats (Essai 3 : affaissement au bout de 7 s sous 5 pièces) (2,5 pts) :</p>
+                            <select id="e3-n2b-valid" class="w-full border rounded-lg p-2 text-xs bg-white">
+                                <option value="">L'exigence de résistance de 10 s est-elle respectée ?</option>
+                                <option value="Non">Non, car le pont s'affaisse à 7 s (< 10 s)</option>
+                                <option value="Oui">Oui, elle est respectée</option>
+                            </select>
+                            <input type="text" id="e3-n2b-prio" placeholder="Quel élément examiner en priorité ? (ex: Le tablier et ses renforts)" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs">
+                        </div>
+                    </div>
+
+                    <!-- N3 - 3e -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                        <span class="px-2.5 py-1 rounded bg-amber-100 text-amber-800 font-bold text-xs">N3 - APPLICATION (5 pts)</span>
+                        <div class="space-y-2">
+                            <p class="font-bold text-sm text-slate-800">N3a - Élaborer un processus de conception et réalisation (Actions & Contrôles) (2,5 pts) :</p>
+                            <textarea id="e3-n3a-proc" rows="3" placeholder="Étape 1 : Traçage et découpe (Contrôle dimensions) ; Étape 2 : Pliage en U et triangulation ; Étape 3 : Assemblage ; Étape 4 : Essai en charge..." class="w-full p-2.5 rounded-xl border border-slate-300 text-xs"></textarea>
+                        </div>
+                        <div class="space-y-2 pt-2 border-t border-slate-100">
+                            <p class="font-bold text-sm text-slate-800">N3b - Concevoir un protocole de validation complet (grandeurs, matériel, critères) (2,5 pts) :</p>
+                            <textarea id="e3-n3b-proto" rows="2" placeholder="Grandeurs : longueur (18 cm), masse (5 pièces), temps (10 s)..." class="w-full p-2.5 rounded-xl border border-slate-300 text-xs"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- N4 - 3e -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                        <span class="px-2.5 py-1 rounded bg-purple-100 text-purple-800 font-bold text-xs">N4 - MAÎTRISE (5 pts)</span>
+                        <div class="space-y-2">
+                            <p class="font-bold text-sm text-slate-800">N4a - Justifier le choix entre couche plate (A) et renfort triangulaire (B) (2,5 pts) :</p>
+                            <textarea id="e3-n4a-justif" rows="2" placeholder="Prends en compte la résistance à la flexion, la rigidité, la quantité de matière et le recyclage..." class="w-full p-2.5 rounded-xl border border-slate-300 text-xs"></textarea>
+                        </div>
+                        <div class="space-y-2 pt-2 border-t border-slate-100">
+                            <p class="font-bold text-sm text-slate-800">N4b - Nouvelle exigence : franchir 22 cm au lieu de 18 cm sans matériaux supplémentaires (2,5 pts) :</p>
+                            <textarea id="e3-n4b-22cm" rows="3" placeholder="Décris les modifications apportées au tablier (hauteur des plis, treillis triangulé sous le centre) et la vérification..." class="w-full p-2.5 rounded-xl border border-slate-300 text-xs"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Correction Officielle 3e -->
+                <div id="corr-3e" class="hidden bg-emerald-50 border border-emerald-200 rounded-2xl p-6 space-y-2 text-xs text-emerald-950">
+                    <h4 class="font-display font-bold text-sm text-emerald-900 flex items-center gap-2"><i class="fa-solid fa-key"></i> Correction & Barème Officiel - Classe de 3e</h4>
+                    <p><strong>N1a (2,5 pts) :</strong> 18 cm ; 5 pièces ; 10 secondes ; 3 étages ; papier A4 et carton.</p>
+                    <p><strong>N1b (2,5 pts) :</strong> Pliage : B ; Assemblage : C ; Flexion : A.</p>
+                    <p><strong>N2a & N2b (5 pts) :</strong> Intérêt mécanique + recyclabilité/écoconception. Essai 3 non validé (7 s < 10 s), examen prioritaire du tablier et de ses renforts.</p>
+                    <p><strong>N3a & N3b (5 pts) :</strong> Processus structuré avec contrôles associés et protocole reproductible.</p>
+                    <p><strong>N4a & N4b (5 pts) :</strong> Solution B (triangulation) offrant un moment d'inertie supérieur. Pour 22 cm : augmenter la hauteur des rebords pliés et concentrer les renforts triangulaires au centre.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==========================================
+             TAB 5: BILAN, AUTOÉVALUATION & CULTURE FABLAB
+             ========================================== -->
+        <section id="tab-bilan" class="tab-content hidden space-y-8">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- 6. Bilan des apprentissages -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4">
+                    <h3 class="font-display font-bold text-lg text-slate-900 flex items-center gap-2">
+                        <i class="fa-solid fa-list-check text-emerald-600"></i> 6. Bilan des Apprentissages
+                    </h3>
+                    <p class="text-xs text-slate-500">À la fin de cette activité, coche ce que tu es capable de faire :</p>
+                    <div class="space-y-2.5 text-sm text-slate-700" id="skills-checklist">
+                        <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer"><input type="checkbox" onchange="updateBilanProgress()" class="w-4 h-4 rounded text-amber-600"> Identifier un besoin et respecter un cahier des charges.</label>
+                        <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer"><input type="checkbox" onchange="updateBilanProgress()" class="w-4 h-4 rounded text-amber-600"> Dessiner un croquis de solution technique.</label>
+                        <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer"><input type="checkbox" onchange="updateBilanProgress()" class="w-4 h-4 rounded text-amber-600"> Identifier les propriétés des matériaux utilisés.</label>
+                        <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer"><input type="checkbox" onchange="updateBilanProgress()" class="w-4 h-4 rounded text-amber-600"> Choisir une forme de pliage pour renforcer une structure.</label>
+                        <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer"><input type="checkbox" onchange="updateBilanProgress()" class="w-4 h-4 rounded text-amber-600"> Réaliser un prototype.</label>
+                        <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer"><input type="checkbox" onchange="updateBilanProgress()" class="w-4 h-4 rounded text-amber-600"> Mettre en œuvre un protocole de test.</label>
+                        <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer"><input type="checkbox" onchange="updateBilanProgress()" class="w-4 h-4 rounded text-amber-600"> Observer et interpréter les résultats d'un essai.</label>
+                        <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer"><input type="checkbox" onchange="updateBilanProgress()" class="w-4 h-4 rounded text-amber-600"> Proposer une amélioration de ma réalisation.</label>
+                        <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer"><input type="checkbox" onchange="updateBilanProgress()" class="w-4 h-4 rounded text-amber-600"> Présenter et justifier mes choix techniques.</label>
+                    </div>
+                    <div class="pt-2">
+                        <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                            <div id="skills-bar" class="bg-emerald-500 h-full w-0 transition-all duration-300"></div>
+                        </div>
+                        <p id="skills-count-text" class="text-xs text-slate-500 mt-1 text-right">0 / 9 compétences cochées</p>
+                    </div>
+                </div>
+
+                <!-- 7. Autoévaluation & 8. Grille sur 10 -->
+                <div class="space-y-6">
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-3">
+                        <h3 class="font-display font-bold text-lg text-slate-900 flex items-center gap-2">
+                            <i class="fa-solid fa-user-check text-amber-600"></i> 7. Autoévaluation de mon niveau
+                        </h3>
+                        <div class="space-y-2 text-sm">
+                            <label class="flex items-center gap-3 p-2.5 rounded-xl border border-slate-200 cursor-pointer hover:bg-amber-50/40">
+                                <input type="radio" name="autoeval" value="J'ai besoin d'aide pour réaliser l'activité.">
+                                <span>J'ai besoin d'aide pour réaliser l'activité.</span>
+                            </label>
+                            <label class="flex items-center gap-3 p-2.5 rounded-xl border border-slate-200 cursor-pointer hover:bg-amber-50/40">
+                                <input type="radio" name="autoeval" value="J'ai réussi une partie de l'activité.">
+                                <span>J'ai réussi une partie de l'activité.</span>
+                            </label>
+                            <label class="flex items-center gap-3 p-2.5 rounded-xl border border-slate-200 cursor-pointer hover:bg-amber-50/40">
+                                <input type="radio" name="autoeval" value="J'ai réalisé la maquette et respecté la plupart des exigences.">
+                                <span>J'ai réalisé la maquette et respecté la plupart des exigences.</span>
+                            </label>
+                            <label class="flex items-center gap-3 p-2.5 rounded-xl border border-slate-200 cursor-pointer hover:bg-amber-50/40">
+                                <input type="radio" name="autoeval" value="J'ai réalisé, testé et expliqué ma solution de manière autonome." checked>
+                                <span>J'ai réalisé, testé et expliqué ma solution de manière autonome.</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- 8. Grille d'évaluation du travail (/10) -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-display font-bold text-lg text-slate-900">8. Grille d'évaluation du travail</h3>
+                            <span id="grid10-total" class="px-3 py-1 rounded-full bg-amber-100 text-amber-900 font-bold text-sm">Total : 10 / 10</span>
+                        </div>
+                        <div class="space-y-2 text-xs">
+                            <div class="flex items-center justify-between py-1.5 border-b">
+                                <span>Croquis préparatoire, dimensions et choix justifiés (/2)</span>
+                                <input type="number" min="0" max="2" step="0.5" value="2" onchange="calcGrid10()" class="grid10-input w-16 border rounded p-1 text-center font-bold">
+                            </div>
+                            <div class="flex items-center justify-between py-1.5 border-b">
+                                <span>Respect des matériaux et réalisation de la structure (/2)</span>
+                                <input type="number" min="0" max="2" step="0.5" value="2" onchange="calcGrid10()" class="grid10-input w-16 border rounded p-1 text-center font-bold">
+                            </div>
+                            <div class="flex items-center justify-between py-1.5 border-b">
+                                <span>Respect du cahier des charges et résistance à l'essai (/2)</span>
+                                <input type="number" min="0" max="2" step="0.5" value="2" onchange="calcGrid10()" class="grid10-input w-16 border rounded p-1 text-center font-bold">
+                            </div>
+                            <div class="flex items-center justify-between py-1.5 border-b">
+                                <span>Réalisation de la pièce montée et symbolique (/2)</span>
+                                <input type="number" min="0" max="2" step="0.5" value="2" onchange="calcGrid10()" class="grid10-input w-16 border rounded p-1 text-center font-bold">
+                            </div>
+                            <div class="flex items-center justify-between py-1.5">
+                                <span>Analyse des résultats et proposition d'amélioration (/2)</span>
+                                <input type="number" min="0" max="2" step="0.5" value="2" onchange="calcGrid10()" class="grid10-input w-16 border rounded p-1 text-center font-bold">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Culture Technologique : DIY et FabLab (Page 32) -->
+            <div class="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-3xl p-6 sm:p-8 shadow-lg">
+                <div class="max-w-3xl space-y-3 mb-6">
+                    <span class="text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded bg-amber-500/20 text-amber-300">Culture Technologique • Page 32</span>
+                    <h3 class="font-display font-bold text-2xl">L'esprit DIY (Do It Yourself) et la démarche FabLab</h3>
+                    <p class="text-sm text-slate-300 leading-relaxed">
+                        Le <strong>DIY (« Fais-le toi-même »)</strong> consiste à imaginer, fabriquer, réparer ou améliorer soi-même un objet avec les matériaux disponibles. Le <strong>FabLab (« Laboratoire de fabrication »)</strong> repose sur trois piliers essentiels :
+                    </p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-white/10 backdrop-blur rounded-2xl p-5 border border-white/10">
+                        <div class="text-amber-400 font-display font-extrabold text-lg">1. LEARN (Apprendre)</div>
+                        <p class="text-xs text-slate-200 mt-1">Apprendre en expérimentant par la pratique et en partageant ses connaissances.</p>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur rounded-2xl p-5 border border-white/10">
+                        <div class="text-emerald-400 font-display font-extrabold text-lg">2. MAKE (Fabriquer)</div>
+                        <p class="text-xs text-slate-200 mt-1">Fabriquer des objets et des prototypes pour tester concrètement ses idées.</p>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur rounded-2xl p-5 border border-white/10">
+                        <div class="text-sky-400 font-display font-extrabold text-lg">3. SHARE (Partager)</div>
+                        <p class="text-xs text-slate-200 mt-1">Partager ses idées, ses expériences et ses améliorations. L'erreur permet d'apprendre !</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 mt-12 py-6 text-center text-xs text-slate-500 no-print">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+            <p><strong>Fête de la Science 2026 — « Saveur savante »</strong> • Activité de Technologie Cycle 4 (5e / 4e / 3e)</p>
+            <p>D'après la ressource pédagogique <em>Le Pont des Saveurs et des Cultures</em> de <strong>TechnoLOY</strong> (spip.technoloy.fr)</p>
+        </div>
+    </footer>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        /* ==========================================
+           1. TOAST NOTIFICATION SYSTEM (No alert)
+           ========================================== */
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const colors = {
+                info: 'bg-slate-900 text-white border-slate-700',
+                success: 'bg-emerald-600 text-white border-emerald-500',
+                warning: 'bg-amber-500 text-slate-950 border-amber-400'
+            };
+            toast.className = `pointer-events-auto flex items-center justify-between gap-3 px-4 py-3 rounded-xl shadow-lg border text-xs sm:text-sm font-semibold transition-all duration-300 ${colors[type] || colors.info}`;
+            toast.innerHTML = `<span>${message}</span><button onclick="this.parentElement.remove()" class="opacity-70 hover:opacity-100"><i class="fa-solid fa-xmark"></i></button>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                if (toast && toast.parentElement) toast.remove();
+            }, 4000);
+        }
+
+        /* ==========================================
+           2. NAVIGATION TABS & STEPPER
+           ========================================== */
+        function switchMainTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById('tab-' + tabId).classList.remove('hidden');
+
+            document.querySelectorAll('.main-tab-btn').forEach(btn => {
+                btn.classList.remove('border-amber-500', 'text-amber-400', 'font-semibold');
+                btn.classList.add('border-transparent', 'text-slate-300');
+            });
+            const activeBtn = document.getElementById('tab-btn-' + tabId);
+            if (activeBtn) {
+                activeBtn.classList.remove('border-transparent', 'text-slate-300');
+                activeBtn.classList.add('border-amber-500', 'text-amber-400', 'font-semibold');
+            }
+
+            if (tabId === 'atelier') {
+                setTimeout(resizeSketchpad, 60);
+            }
+            if (tabId === 'simulateur') {
+                updateSimVisuals();
+            }
+        }
+
+        function selectDiyStep(stepNumber) {
+            document.querySelectorAll('.diy-step-panel').forEach(p => p.classList.add('hidden'));
+            const target = document.getElementById('diy-step-' + stepNumber);
+            if (target) target.classList.remove('hidden');
+
+            document.querySelectorAll('.diy-step-btn').forEach((btn, idx) => {
+                if (idx + 1 === stepNumber) {
+                    btn.classList.add('step-active');
+                } else {
+                    btn.classList.remove('step-active');
+                }
+            });
+            document.getElementById('step-progress-text').textContent = `Étape ${stepNumber} sur 7`;
+
+            if (stepNumber === 2) {
+                setTimeout(resizeSketchpad, 50);
+            }
+        }
+
+        /* ==========================================
+           3. GLOBAL 45-MINUTE CHRONOMETER
+           ========================================== */
+        let globalSeconds = 45 * 60;
+        let globalInterval = null;
+
+        function updateGlobalTimerDisplay() {
+            const mins = Math.floor(globalSeconds / 60).toString().padStart(2, '0');
+            const secs = (globalSeconds % 60).toString().padStart(2, '0');
+            document.getElementById('global-timer').textContent = `${mins}:${secs}`;
+        }
+
+        function toggleGlobalTimer() {
+            const btn = document.getElementById('timer-btn');
+            if (globalInterval) {
+                clearInterval(globalInterval);
+                globalInterval = null;
+                btn.innerHTML = '<i class="fa-solid fa-play mr-1"></i>Reprendre';
+            } else {
+                globalInterval = setInterval(() => {
+                    if (globalSeconds > 0) {
+                        globalSeconds--;
+                        updateGlobalTimerDisplay();
+                    } else {
+                        clearInterval(globalInterval);
+                        globalInterval = null;
+                        showToast('Les 45 minutes de l\'activité sont écoulées !', 'warning');
+                    }
+                }, 1000);
+                btn.innerHTML = '<i class="fa-solid fa-pause mr-1"></i>Pause';
+            }
+        }
+
+        function resetGlobalTimer() {
+            if (globalInterval) clearInterval(globalInterval);
+            globalInterval = null;
+            globalSeconds = 45 * 60;
+            updateGlobalTimerDisplay();
+            document.getElementById('timer-btn').innerHTML = '<i class="fa-solid fa-play mr-1"></i>Démarrer';
+        }
+
+        /* ==========================================
+           4. STUDENT MODAL & HELPERS
+           ========================================== */
+        function toggleStudentModal() {
+            const modal = document.getElementById('student-modal');
+            modal.classList.toggle('hidden');
+        }
+
+        function saveStudentInfo() {
+            const nom = document.getElementById('std-nom').value.trim();
+            const prenom = document.getElementById('std-prenom').value.trim();
+            const classe = document.getElementById('std-classe').value;
+            const badge = document.getElementById('student-badge-name');
+            if (prenom || nom) {
+                badge.textContent = `${prenom} ${nom} (${classe})`;
+            } else {
+                badge.textContent = `Élève (${classe})`;
+            }
+            switchEvalLevel(classe);
+            toggleStudentModal();
+            showToast('Informations élève enregistrées !', 'success');
+        }
+
+        function syncEvalLevelFromClass() {
+            const classe = document.getElementById('std-classe').value;
+            switchEvalLevel(classe);
+        }
+
+        function prefillStep1Hints() {
+            document.getElementById('s1-q1').value = "Concevoir une structure en forme de pont rigide et stable pouvant accueillir symboliquement la pièce montée du mariage de Kofi et Abénah.";
+            document.getElementById('s1-q2').value = "Représenter un pont en forme de pièce montée à 3 étages franchissant 18 cm.";
+            document.getElementById('s1-q3').value = "3 feuilles blanches A4 maximum, 2 tubes en carton d'essuie-tout et 40 cm max de ruban adhésif.";
+            document.getElementById('s1-q4').value = "Franchir un espace libre de 18 cm (largeur min 5 cm) et supporter 5 pièces de 1 € au centre pendant 10 secondes sans s'effondrer.";
+            showToast('Exemples de réponses chargés pour l\'Étape 1.', 'info');
+        }
+
+        function fillCulturePreset(country, val) {
+            if (!val) return;
+            if (country === 'kenya') {
+                document.getElementById('culture-kenya').value = val;
+            } else {
+                document.getElementById('culture-nigeria').value = val;
+            }
+        }
+
+        /* ==========================================
+           5. INTERACTIVE SKETCHPAD (STEP 2)
+           ========================================== */
+        const canvas = document.getElementById('sketchpad');
+        const ctx = canvas.getContext('2d');
+        let drawing = false;
+        let brushColor = '#0f172a';
+
+        function resizeSketchpad() {
+            if (!canvas.parentElement.clientWidth) return;
+            const rect = canvas.getBoundingClientRect();
+            const tempImage = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            canvas.width = rect.width;
+            canvas.height = 280;
+            ctx.putImageData(tempImage, 0, 0);
+        }
+
+        function setBrushColor(c) {
+            brushColor = c;
+        }
+
+        function getPointerPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
+            drawing = true;
+            const pos = getPointerPos(e);
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+        });
+        canvas.addEventListener('mousemove', (e) => {
+            if (!drawing) return;
+            const pos = getPointerPos(e);
+            ctx.lineTo(pos.x, pos.y);
+            ctx.strokeStyle = brushColor;
+            ctx.lineWidth = 2.5;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+        });
+        window.addEventListener('mouseup', () => { drawing = false; });
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            drawing = true;
+            const pos = getPointerPos(e);
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+        }, { passive: false });
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (!drawing) return;
+            const pos = getPointerPos(e);
+            ctx.lineTo(pos.x, pos.y);
+            ctx.strokeStyle = brushColor;
+            ctx.lineWidth = 2.5;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+        }, { passive: false });
+        canvas.addEventListener('touchend', () => { drawing = false; });
+
+        function clearSketchpad() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function loadTemplateSketch() {
+            resizeSketchpad();
+            clearSketchpad();
+            const w = canvas.width;
+            const h = canvas.height;
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 2;
+
+            // Pillars
+            ctx.strokeRect(w * 0.15, h * 0.58, 35, 90);
+            ctx.strokeRect(w * 0.85 - 35, h * 0.58, 35, 90);
+
+            // Deck
+            ctx.fillStyle = '#fef3c7';
+            ctx.fillRect(w * 0.12, h * 0.50, w * 0.76, 18);
+            ctx.strokeRect(w * 0.12, h * 0.50, w * 0.76, 18);
+
+            // 3 Tiers
+            ctx.strokeRect(w * 0.35, h * 0.38, w * 0.30, 32);
+            ctx.strokeRect(w * 0.40, h * 0.27, w * 0.20, 30);
+            ctx.strokeRect(w * 0.45, h * 0.17, w * 0.10, 28);
+
+            // Annotations
+            ctx.fillStyle = '#0f172a';
+            ctx.font = 'bold 12px Inter';
+            ctx.fillText('← Espace libre : 18 cm →', w * 0.41, h * 0.82);
+            ctx.fillText('Pièce montée (3 étages)', w * 0.41, h * 0.12);
+            ctx.fillText('Tablier plié en U + Renforts', w * 0.40, h * 0.64);
+            showToast('Modèle de croquis annoté inséré !', 'info');
+        }
+
+        /* ==========================================
+           6. BRIDGE MECHANICAL SIMULATOR (TAB 3)
+           ========================================== */
+        let simCoins = 5;
+        let simTimer = null;
+        let simElapsed = 0;
+
+        function changeCoins(delta) {
+            simCoins = Math.max(0, Math.min(8, simCoins + delta));
+            document.getElementById('sim-coins-label').textContent = `${simCoins} pièce${simCoins > 1 ? 's' : ''}`;
+            updateSimVisuals();
+        }
+
+        function computeSimDeflection() {
+            const deck = document.getElementById('sim-deck').value;
+            const reinforce = document.getElementById('sim-reinforce').value;
+            const span = parseInt(document.getElementById('sim-span').value, 10);
+
+            // Stiffness factor
+            let stiffness = 1.0;
+            if (deck === 'ufold') stiffness += 2.2;
+            if (reinforce === 'flat') stiffness += 0.6;
+            if (reinforce === 'accordion') stiffness += 2.8;
+
+            const spanFactor = span === 22 ? 1.45 : 1.0;
+            const rawDeflection = (simCoins * 11 * spanFactor) / stiffness;
+            return Math.round(rawDeflection);
+        }
+
+        function updateSimVisuals() {
+            const deck = document.getElementById('sim-deck').value;
+            const reinforce = document.getElementById('sim-reinforce').value;
+            const span = parseInt(document.getElementById('sim-span').value, 10);
+            const deflection = computeSimDeflection();
+
+            // Adjust pillars for 18cm vs 22cm
+            const leftPillar = document.getElementById('sim-pillar-left');
+            const rightPillar = document.getElementById('sim-pillar-right');
+            const spanLine = document.getElementById('sim-span-line');
+            const spanText = document.getElementById('sim-span-text');
+
+            if (span === 22) {
+                leftPillar.setAttribute('transform', 'translate(65, 115)');
+                rightPillar.setAttribute('transform', 'translate(485, 115)');
+                spanLine.setAttribute('x1', '120');
+                spanLine.setAttribute('x2', '480');
+                spanText.textContent = 'Espace libre : 22 cm (Défi 3e)';
+            } else {
+                leftPillar.setAttribute('transform', 'translate(95, 115)');
+                rightPillar.setAttribute('transform', 'translate(455, 115)');
+                spanLine.setAttribute('x1', '150');
+                spanLine.setAttribute('x2', '450');
+                spanText.textContent = 'Espace libre : 18 cm';
+            }
+
+            // Truss visibility
+            const truss = document.getElementById('sim-truss-path');
+            if (reinforce === 'accordion') {
+                truss.style.display = 'block';
+                const midY = 132 + deflection * 1.1;
+                truss.setAttribute('d', `M145,115 Q300,${midY} 455,115`);
+            } else {
+                truss.style.display = 'none';
+            }
+
+            // Deck curve
+            const deckPath = document.getElementById('sim-deck-path');
+            const thickness = deck === 'ufold' ? 14 : 6;
+            const controlY = 105 + deflection * 1.3;
+            deckPath.setAttribute('d', `M80,105 Q300,${controlY} 520,105 L520,${105 + thickness} Q300,${controlY + thickness} 80,${105 + thickness} Z`);
+
+            // Move cake & coins load with midpoint deflection
+            const loadGroup = document.getElementById('sim-load-group');
+            const midOffset = 105 + (deflection * 0.65);
+            loadGroup.setAttribute('transform', `translate(300, ${midOffset})`);
+
+            // Render coins stack
+            const coinsSvg = document.getElementById('sim-coins-svg');
+            coinsSvg.innerHTML = '';
+            for (let i = 0; i < simCoins; i++) {
+                const yPos = -61 - (i * 6);
+                const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                rect.setAttribute('x', '-14');
+                rect.setAttribute('y', yPos);
+                rect.setAttribute('width', '28');
+                rect.setAttribute('height', '5');
+                rect.setAttribute('rx', '2');
+                rect.setAttribute('fill', '#fbbf24');
+                rect.setAttribute('stroke', '#b45309');
+                coinsSvg.appendChild(rect);
+            }
+
+            document.getElementById('sim-deflection-text').textContent = `Flèche (déformation) : ${deflection} mm`;
+        }
+
+        function startSimTest() {
+            if (simTimer) return;
+            simElapsed = 0;
+            const deflection = computeSimDeflection();
+            const badge = document.getElementById('sim-status-badge');
+            const feedback = document.getElementById('sim-feedback-box');
+
+            badge.textContent = 'Essai en cours...';
+            badge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-amber-500 text-slate-950';
+
+            simTimer = setInterval(() => {
+                simElapsed += 0.2;
+                document.getElementById('sim-chrono').textContent = `${simElapsed.toFixed(1)} s / 10.0 s`;
+
+                // Check failure if deflection is too high (e.g. flat sheet without folds)
+                if (deflection > 28 && simElapsed >= 4.0) {
+                    clearInterval(simTimer);
+                    simTimer = null;
+                    badge.textContent = 'Effondrement avant 10 s !';
+                    badge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-rose-600 text-white';
+                    feedback.innerHTML = `<strong class="text-rose-400"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Échec du test (${simElapsed.toFixed(1)} s) :</strong> Le tablier s'est trop courbé sous l'effet de la flexion. Sélectionne un <strong>profil plié en U</strong> et des <strong>renforts en accordéon</strong> pour rigidifier la structure !`;
+                    showToast('Le pont a fléchi avant les 10 secondes ! Ajoute des plis de renforcement.', 'warning');
+                    return;
+                }
+
+                if (simElapsed >= 10.0) {
+                    clearInterval(simTimer);
+                    simTimer = null;
+                    document.getElementById('sim-chrono').textContent = `10.0 s / 10.0 s`;
+                    badge.textContent = 'Protocole Validé (10 s) !';
+                    badge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-emerald-500 text-slate-950';
+                    feedback.innerHTML = `<strong class="text-emerald-400"><i class="fa-solid fa-circle-check mr-1"></i> Cahier des charges validé :</strong> Le pont a supporté ${simCoins} pièce(s) pendant 10 secondes sans s'effondrer (déformation maîtrisée de ${deflection} mm).`;
+                    showToast('Bravo ! Ton pont a résisté pendant 10 secondes !', 'success');
+                }
+            }, 200);
+        }
+
+        function resetSim() {
+            if (simTimer) clearInterval(simTimer);
+            simTimer = null;
+            simElapsed = 0;
+            document.getElementById('sim-chrono').textContent = '00.0 s / 10.0 s';
+            const badge = document.getElementById('sim-status-badge');
+            badge.textContent = 'Prêt pour l\'essai';
+            badge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-slate-700 text-amber-300';
+            updateSimVisuals();
+        }
+
+        /* ==========================================
+           7. DIFFERENTIATED EVALUATIONS (5e / 4e / 3e)
+           ========================================== */
+        let currentEvalLevel = '5e';
+
+        function switchEvalLevel(lvl) {
+            currentEvalLevel = lvl;
+            document.querySelectorAll('.eval-panel').forEach(p => p.classList.add('hidden'));
+            const panel = document.getElementById('eval-panel-' + lvl);
+            if (panel) panel.classList.remove('hidden');
+
+            document.querySelectorAll('.eval-lvl-btn').forEach(btn => {
+                btn.className = 'eval-lvl-btn px-5 py-2 rounded-xl font-display font-bold text-sm text-slate-600 hover:text-slate-900 transition';
+            });
+            const activeBtn = document.getElementById('eval-btn-' + lvl);
+            if (activeBtn) {
+                activeBtn.className = 'eval-lvl-btn px-5 py-2 rounded-xl font-display font-bold text-sm bg-slate-900 text-white shadow transition';
+            }
+            document.getElementById('eval-score-badge').textContent = `Note estimée (${lvl}) : -- / 20`;
+        }
+
+        function update4eTimeTotal() {
+            const t1 = parseInt(document.getElementById('e4-t1').value || 0, 10);
+            const t2 = parseInt(document.getElementById('e4-t2').value || 0, 10);
+            const t3 = parseInt(document.getElementById('e4-t3').value || 0, 10);
+            const t4 = parseInt(document.getElementById('e4-t4').value || 0, 10);
+            const sum = t1 + t2 + t3 + t4;
+            const el = document.getElementById('e4-time-sum');
+            el.textContent = `Total planifié : ${sum} / 17 min`;
+            el.className = sum === 17 ? 'text-xs font-bold text-right text-emerald-600' : 'text-xs font-bold text-right text-rose-600';
+        }
+
+        function gradeCurrentEvaluation() {
+            let score = 0;
+
+            if (currentEvalLevel === '5e') {
+                // N1a (2.5)
+                if (document.getElementById('e5-n1a-1').value === 'B') score += 0.85;
+                if (document.getElementById('e5-n1a-2').value === 'A') score += 0.85;
+                if (document.getElementById('e5-n1a-3').value === 'C') score += 0.8;
+                // N1b (2.5)
+                if (document.getElementById('e5-n1b-1').value === 'papier') score += 0.625;
+                if (document.getElementById('e5-n1b-2').value === 'carton') score += 0.625;
+                if (document.getElementById('e5-n1b-3').value === 'pliage') score += 0.625;
+                if (document.getElementById('e5-n1b-4').value === 'assemblage') score += 0.625;
+                // N2a (2.5)
+                const n2a = document.querySelector('input[name="e5-n2a"]:checked');
+                if (n2a && n2a.value === 'B') score += 1.5;
+                if (document.getElementById('e5-n2a-justif').value.trim().length > 5) score += 1.0;
+                // N2b (2.5)
+                const n2b = document.querySelector('input[name="e5-n2b"]:checked');
+                if (n2b && n2b.value === 'soutenir') score += 1.5;
+                if (document.getElementById('e5-n2b-justif').value.trim().length > 5) score += 1.0;
+                // N3a (2.5)
+                if (document.getElementById('e5-n3a-croquis').value === '1' &&
+                    document.getElementById('e5-n3a-plier').value === '2' &&
+                    document.getElementById('e5-n3a-assemble').value === '3' &&
+                    document.getElementById('e5-n3a-tester').value === '4') {
+                    score += 2.5;
+                }
+                // N3b (2.5)
+                if (document.getElementById('e5-n3b-check').checked) score += 2.5;
+                // N4a (2.5)
+                const n4a = document.querySelector('input[name="e5-n4a"]:checked');
+                if (n4a && n4a.value === 'ajouter') score += 1.5;
+                if (document.getElementById('e5-n4a-justif').value.trim().length > 5) score += 1.0;
+                // N4b (2.5)
+                if (document.getElementById('e5-n4b-text').value.trim().length > 8) score += 2.5;
+
+                document.getElementById('corr-5e').classList.remove('hidden');
+            } else if (currentEvalLevel === '4e') {
+                if (document.getElementById('e4-n1a-1').value === 'tablier') score += 0.625;
+                if (document.getElementById('e4-n1a-2').value === 'leger') score += 0.625;
+                if (document.getElementById('e4-n1a-3').value === 'support') score += 0.625;
+                if (document.getElementById('e4-n1a-4').value === 'rigidite') score += 0.625;
+
+                const n1b = document.querySelector('input[name="e4-n1b"]:checked');
+                if (n1b && n1b.value === 'flexion') score += 1.5;
+                if (document.getElementById('e4-n1b-def').value.trim().length > 5) score += 1.0;
+
+                if (document.getElementById('e4-n2a-choice').value === 'B') score += 1.5;
+                if (document.getElementById('e4-n2a-exp').value.trim().length > 5) score += 1.0;
+                if (document.getElementById('e4-n2b-exp').value.trim().length > 8) score += 2.5;
+
+                const sum = parseInt(document.getElementById('e4-t1').value || 0) +
+                            parseInt(document.getElementById('e4-t2').value || 0) +
+                            parseInt(document.getElementById('e4-t3').value || 0) +
+                            parseInt(document.getElementById('e4-t4').value || 0);
+                if (sum === 17) score += 2.5;
+                if (document.getElementById('e4-n3b-proto').value.trim().length > 10) score += 2.5;
+
+                if (document.getElementById('e4-n4a-proto').value === 'B') score += 1.5;
+                if (document.getElementById('e4-n4a-justif').value.trim().length > 4) score += 1.0;
+
+                if (document.getElementById('e4-n4b-choice').value === 'B') score += 1.25;
+                if (document.getElementById('e4-n4b-justif').value.trim().length > 8) score += 1.25;
+
+                document.getElementById('corr-4e').classList.remove('hidden');
+            } else if (currentEvalLevel === '3e') {
+                if (document.getElementById('e3-n1a-dist').value.includes('18')) score += 0.625;
+                if (document.getElementById('e3-n1a-pieces').value.includes('5')) score += 0.625;
+                if (document.getElementById('e3-n1a-duree').value.includes('10')) score += 0.625;
+                if (document.getElementById('e3-n1a-etages').value.includes('3')) score += 0.625;
+
+                if (document.getElementById('e3-n1b-pliage').value === 'B') score += 0.85;
+                if (document.getElementById('e3-n1b-assemblage').value === 'C') score += 0.85;
+                if (document.getElementById('e3-n1b-flexion').value === 'A') score += 0.8;
+
+                if (document.getElementById('e3-n2a-eco').value.trim().length > 10) score += 2.5;
+                if (document.getElementById('e3-n2b-valid').value === 'Non') score += 1.5;
+                if (document.getElementById('e3-n2b-prio').value.trim().length > 4) score += 1.0;
+
+                if (document.getElementById('e3-n3a-proc').value.trim().length > 10) score += 2.5;
+                if (document.getElementById('e3-n3b-proto').value.trim().length > 10) score += 2.5;
+
+                if (document.getElementById('e3-n4a-justif').value.trim().length > 10) score += 2.5;
+                if (document.getElementById('e3-n4b-22cm').value.trim().length > 10) score += 2.5;
+
+                document.getElementById('corr-3e').classList.remove('hidden');
+            }
+
+            const finalScore = Math.round(score * 10) / 10;
+            document.getElementById('eval-score-badge').textContent = `Note estimée (${currentEvalLevel}) : ${finalScore} / 20`;
+            showToast(`Correction affichée ! Score estimé : ${finalScore} / 20`, 'success');
+        }
+
+        /* ==========================================
+           8. BILAN & SELF-ASSESSMENT PROGRESS
+           ========================================== */
+        function updateBilanProgress() {
+            const boxes = document.querySelectorAll('#skills-checklist input[type="checkbox"]');
+            let checked = 0;
+            boxes.forEach(b => { if (b.checked) checked++; });
+            const pct = Math.round((checked / boxes.length) * 100);
+            document.getElementById('skills-bar').style.width = pct + '%';
+            document.getElementById('skills-count-text').textContent = `${checked} / ${boxes.length} compétences cochées`;
+        }
+
+        function calcGrid10() {
+            let sum = 0;
+            document.querySelectorAll('.grid10-input').forEach(inp => {
+                sum += parseFloat(inp.value || 0);
+            });
+            sum = Math.min(10, Math.max(0, sum));
+            document.getElementById('grid10-total').textContent = `Total : ${sum} / 10`;
+        }
+
+        function exportReport() {
+            showToast('Préparation de l\'impression du dossier élève...', 'info');
+            setTimeout(() => {
+                window.print();
+            }, 400);
+        }
+
+        // Init on load
+        window.onload = function () {
+            updateGlobalTimerDisplay();
+            updateSimVisuals();
+        };
+        window.addEventListener('resize', resizeSketchpad);
+    </script>
+</body>
+</html>
